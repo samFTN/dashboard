@@ -310,13 +310,33 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
               <div className="space-y-2">
                 <div>
                   <label className="text-xs mb-1 block" style={{ color: 'var(--muted2)' }}>Date et heure</label>
-                  <input
-                    type="datetime-local"
-                    step={900}
-                    value={currentLead.cours_essai_date?.slice(0, 16) ?? ''}
-                    onChange={e => handleCoursEssaiChange('cours_essai_date', e.target.value || null as unknown as string)}
-                    style={inputStyle}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={currentLead.cours_essai_date?.slice(0, 10) ?? ''}
+                      onChange={e => {
+                        const time = currentLead.cours_essai_date?.slice(11, 16) ?? '09:00'
+                        handleCoursEssaiChange('cours_essai_date', e.target.value ? `${e.target.value}T${time}` : null as unknown as string)
+                      }}
+                      style={{ ...inputStyle, flex: 1 }}
+                    />
+                    <select
+                      value={currentLead.cours_essai_date?.slice(11, 16) ?? ''}
+                      onChange={e => {
+                        const date = currentLead.cours_essai_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10)
+                        handleCoursEssaiChange('cours_essai_date', `${date}T${e.target.value}`)
+                      }}
+                      style={{ ...inputStyle, width: 100, flex: 'none' }}
+                    >
+                      <option value="">--:--</option>
+                      {Array.from({ length: 17 * 4 }, (_, i) => {
+                        const totalMin = 6 * 60 + i * 15
+                        const h = String(Math.floor(totalMin / 60)).padStart(2, '0')
+                        const m = String(totalMin % 60).padStart(2, '0')
+                        return `${h}:${m}`
+                      }).map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
