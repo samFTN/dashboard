@@ -71,7 +71,12 @@ export async function GET(
   }
 }
 
-const ALLOWED = ['nom', 'objectifs', 'actif', 'date_fin_reelle', 'prof_dedie_id'] as const
+const ALLOWED = [
+  'nom', 'email', 'telephone',
+  'formule', 'date_debut', 'date_fin_prevue', 'date_fin_reelle',
+  'mode_paiement', 'montant_total', 'nb_echeances',
+  'prof_dedie_id', 'objectifs', 'actif',
+] as const
 
 export async function PATCH(
   req: NextRequest,

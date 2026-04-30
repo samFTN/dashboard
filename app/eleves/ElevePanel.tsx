@@ -301,6 +301,20 @@ function SeanceCard({
   )
 }
 
+type EditForm = {
+  nom: string
+  email: string
+  telephone: string
+  formule: string
+  date_debut: string
+  date_fin_prevue: string
+  mode_paiement: string
+  montant_total: string
+  nb_echeances: string
+  prof_dedie_id: string
+  objectifs: string
+}
+
 export default function ElevePanel({
   eleve,
   onClose,
@@ -315,6 +329,21 @@ export default function ElevePanel({
   const [ajoutSeance, setAjoutSeance] = useState(false)
   const [newSeanceDate, setNewSeanceDate] = useState(new Date().toISOString().slice(0, 10))
   const [freezeLoading, setFreezeLoading] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editForm, setEditForm] = useState<EditForm>({
+    nom: eleve.nom,
+    email: eleve.email ?? '',
+    telephone: eleve.telephone ?? '',
+    formule: eleve.formule,
+    date_debut: eleve.date_debut?.slice(0, 10) ?? '',
+    date_fin_prevue: eleve.date_fin_prevue?.slice(0, 10) ?? '',
+    mode_paiement: eleve.mode_paiement,
+    montant_total: String(eleve.montant_total ?? ''),
+    nb_echeances: String(eleve.nb_echeances ?? ''),
+    prof_dedie_id: eleve.prof_dedie_id ?? '',
+    objectifs: eleve.objectifs ?? '',
+  })
+  const [saving, setSaving] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -383,6 +412,37 @@ export default function ElevePanel({
     })
   }
 
+  async function saveEdit() {
+    setSaving(true)
+    try {
+      const body = {
+        nom: editForm.nom.trim(),
+        email: editForm.email.trim() || null,
+        telephone: editForm.telephone.trim() || null,
+        formule: editForm.formule,
+        date_debut: editForm.date_debut || null,
+        date_fin_prevue: editForm.date_fin_prevue || null,
+        mode_paiement: editForm.mode_paiement,
+        montant_total: parseFloat(editForm.montant_total) || null,
+        nb_echeances: parseInt(editForm.nb_echeances) || null,
+        prof_dedie_id: editForm.prof_dedie_id.trim() || null,
+        objectifs: editForm.objectifs.trim() || null,
+      }
+      const res = await fetch(`/api/eleves/${eleve.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) throw new Error()
+      onChanged(body as Partial<EleveRow>)
+      setEditMode(false)
+    } catch {
+      // silently fail — could add error state
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const MODE_LABELS: Record<string, string> = {
     cb_2x: 'CB 2×', cb_3x: 'CB 3×', cb_4x: 'CB 4×', paypal_4x: 'PayPal 4×',
   }
@@ -420,48 +480,186 @@ export default function ElevePanel({
         }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--dark)' }}>
-              {eleve.nom}
+              {editMode ? editForm.nom || eleve.nom : eleve.nom}
             </h2>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
               {eleve.email}{eleve.telephone ? ` · ${eleve.telephone}` : ''}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 20, color: 'var(--muted)', lineHeight: 1, padding: 4,
-            }}
-          >
-            ×
-          </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {!editMode ? (
+              <button
+                onClick={() => {
+                  setEditForm({
+                    nom: eleve.nom,
+                    email: eleve.email ?? '',
+                    telephone: eleve.telephone ?? '',
+                    formule: eleve.formule,
+                    date_debut: eleve.date_debut?.slice(0, 10) ?? '',
+                    date_fin_prevue: eleve.date_fin_prevue?.slice(0, 10) ?? '',
+                    mode_paiement: eleve.mode_paiement,
+                    montant_total: String(eleve.montant_total ?? ''),
+                    nb_echeances: String(eleve.nb_echeances ?? ''),
+                    prof_dedie_id: eleve.prof_dedie_id ?? '',
+                    objectifs: eleve.objectifs ?? '',
+                  })
+                  setEditMode(true)
+                }}
+                style={{
+                  fontSize: 12, padding: '5px 12px', border: '1px solid var(--border)',
+                  borderRadius: 6, cursor: 'pointer', background: 'none', color: 'var(--muted2)',
+                  fontWeight: 500,
+                }}
+              >
+                Modifier
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => setEditMode(false)}
+                  style={{
+                    fontSize: 12, padding: '5px 12px', border: '1px solid var(--border)',
+                    borderRadius: 6, cursor: 'pointer', background: 'none', color: 'var(--muted2)',
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={saveEdit}
+                  disabled={saving}
+                  style={{
+                    fontSize: 12, padding: '5px 12px', border: 'none',
+                    borderRadius: 6, cursor: 'pointer', background: 'var(--accent)', color: '#fff',
+                    fontWeight: 600,
+                  }}
+                >
+                  {saving ? '...' : 'Enregistrer'}
+                </button>
+              </>
+            )}
+            <button
+              onClick={onClose}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 20, color: 'var(--muted)', lineHeight: 1, padding: 4,
+              }}
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Body */}
         <div style={{ padding: '24px', flex: 1 }}>
-          {/* Objectifs */}
-          {eleve.objectifs && (
-            <div style={{
-              background: 'var(--accent-soft)', border: '1px solid #fde68a',
-              borderRadius: 8, padding: '12px 14px', marginBottom: 24,
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
-                Objectifs
-              </div>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--dark)', lineHeight: 1.5 }}>
-                {eleve.objectifs}
-              </p>
-            </div>
-          )}
 
-          {/* Programme */}
-          <Section title="Programme">
-            <Row label="Formule" value={FORMULE_LABELS[eleve.formule] ?? eleve.formule} />
-            <Row label="Début" value={fmt(eleve.date_debut)} />
-            <Row label="Fin prévue" value={fmt(eleve.date_fin_prevue)} />
-            <Row label="Paiement" value={`${MODE_LABELS[eleve.mode_paiement] ?? eleve.mode_paiement} · ${eleve.montant_total} €`} />
-            <Row label="Prof" value={eleve.prof_dedie_id} />
-          </Section>
+          {editMode ? (
+            /* ── MODE ÉDITION ── */
+            <div style={{ marginBottom: 24 }}>
+              {[
+                { key: 'nom', label: 'Nom', type: 'text' },
+                { key: 'email', label: 'Email', type: 'email' },
+                { key: 'telephone', label: 'Téléphone', type: 'text' },
+              ].map(({ key, label, type }) => (
+                <div key={key} style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</label>
+                  <input
+                    type={type}
+                    value={(editForm as Record<string, string>)[key]}
+                    onChange={e => setEditForm(p => ({ ...p, [key]: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  />
+                </div>
+              ))}
+
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Formule</label>
+                <select value={editForm.formule} onChange={e => setEditForm(p => ({ ...p, formule: e.target.value }))}
+                  style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }}>
+                  <option value="programme_4_mois">Programme 4 mois</option>
+                  <option value="programme_12_mois">Programme 12 mois</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                {[
+                  { key: 'date_debut', label: 'Date de début' },
+                  { key: 'date_fin_prevue', label: 'Date de fin prévue' },
+                ].map(({ key, label }) => (
+                  <div key={key}>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</label>
+                    <input type="date" value={(editForm as Record<string, string>)[key]}
+                      onChange={e => setEditForm(p => ({ ...p, [key]: e.target.value }))}
+                      style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Mode de paiement</label>
+                <select value={editForm.mode_paiement} onChange={e => setEditForm(p => ({ ...p, mode_paiement: e.target.value }))}
+                  style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }}>
+                  <option value="cb_2x">CB 2×</option>
+                  <option value="cb_3x">CB 3×</option>
+                  <option value="cb_4x">CB 4×</option>
+                  <option value="paypal_4x">PayPal 4×</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Montant total (€)</label>
+                  <input type="number" value={editForm.montant_total}
+                    onChange={e => setEditForm(p => ({ ...p, montant_total: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Nb échéances</label>
+                  <input type="number" min={1} max={12} value={editForm.nb_echeances}
+                    onChange={e => setEditForm(p => ({ ...p, nb_echeances: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Prof dédié</label>
+                <input type="text" value={editForm.prof_dedie_id}
+                  onChange={e => setEditForm(p => ({ ...p, prof_dedie_id: e.target.value }))}
+                  style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit' }} />
+              </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Objectifs</label>
+                <textarea value={editForm.objectifs} rows={4}
+                  onChange={e => setEditForm(p => ({ ...p, objectifs: e.target.value }))}
+                  style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit', resize: 'vertical' }} />
+              </div>
+            </div>
+          ) : (
+            /* ── MODE LECTURE ── */
+            <>
+              {eleve.objectifs && (
+                <div style={{
+                  background: 'var(--accent-soft)', border: '1px solid #fde68a',
+                  borderRadius: 8, padding: '12px 14px', marginBottom: 24,
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
+                    Objectifs
+                  </div>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--dark)', lineHeight: 1.5 }}>
+                    {eleve.objectifs}
+                  </p>
+                </div>
+              )}
+
+              <Section title="Programme">
+                <Row label="Formule" value={FORMULE_LABELS[eleve.formule] ?? eleve.formule} />
+                <Row label="Début" value={fmt(eleve.date_debut)} />
+                <Row label="Fin prévue" value={fmt(eleve.date_fin_prevue)} />
+                <Row label="Paiement" value={`${MODE_LABELS[eleve.mode_paiement] ?? eleve.mode_paiement} · ${eleve.montant_total} €`} />
+                <Row label="Prof" value={eleve.prof_dedie_id} />
+              </Section>
+            </>
+          )}
 
           {/* Stats */}
           <Section title="Suivi">
