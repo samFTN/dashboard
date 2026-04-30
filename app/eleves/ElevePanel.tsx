@@ -803,11 +803,35 @@ export default function ElevePanel({
               </button>
             </div>
             {detail && detail.freezes.length > 0 && (
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
                 {detail.freezes.map(f => (
-                  <div key={f.id} style={{ marginBottom: 2 }}>
-                    {fmt(f.date_debut)} → {f.date_fin ? fmt(f.date_fin) : 'en cours'}
-                    {f.semaines_duree ? ` (${f.semaines_duree} sem.)` : ''}
+                  <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span>
+                      {fmt(f.date_debut)} → {f.date_fin ? fmt(f.date_fin) : 'en cours'}
+                      {f.semaines_duree ? ` (${f.semaines_duree} sem.)` : ''}
+                    </span>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Supprimer ce freeze ?')) return
+                        const res = await fetch(`/api/eleves/${eleve.id}/freeze/${f.id}`, { method: 'DELETE' })
+                        if (res.ok) {
+                          const data = await fetch(`/api/eleves/${eleve.id}`).then(r => r.json())
+                          setDetail(data)
+                          onChanged({
+                            freeze_actif: data.freeze_actif,
+                            date_fin_prevue: data.date_fin_prevue,
+                            semaines_freeze_consommees: data.semaines_freeze_consommees,
+                          })
+                        }
+                      }}
+                      style={{
+                        marginLeft: 8, fontSize: 11, padding: '1px 7px',
+                        background: 'none', border: '1px solid var(--border)',
+                        borderRadius: 4, cursor: 'pointer', color: 'var(--muted)',
+                      }}
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>
