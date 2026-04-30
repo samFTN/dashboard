@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Image from 'next/image'
 import './globals.css'
 import NavLink from './components/NavLink'
 
@@ -21,11 +22,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           className="w-52 shrink-0 flex flex-col"
           style={{ background: 'var(--card)', borderRight: '1px solid var(--border)' }}
         >
-          <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-            <div className="text-lg font-black" style={{ letterSpacing: '-0.5px', color: 'var(--dark)' }}>
-              Guitar<span style={{ color: 'var(--accent)' }}>isation</span>™
-            </div>
-            <p className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>Dashboard interne</p>
+          <div className="px-5 py-4 flex flex-col items-center" style={{ borderBottom: '1px solid var(--border)' }}>
+            <Image
+              src="/logo.png"
+              alt="Logo Guitarisation™"
+              width={120}
+              height={48}
+              className="object-contain"
+              priority
+            />
+            <p className="text-[11px] mt-1.5" style={{ color: 'var(--muted)' }}>Dashboard interne</p>
           </div>
 
           <nav className="flex-1 p-2 space-y-0.5">
