@@ -1,4 +1,3 @@
-@AGENTS.md
 # Contexte — Dashboard Guitarisation™
 
 ## L'activité
