@@ -9,6 +9,7 @@ export type EleveRow = {
   email: string
   telephone: string | null
   formule: string
+  formule_label: string
   duree_contractuelle_mois: number
   date_debut: string
   date_fin_prevue: string
@@ -175,7 +176,7 @@ export default function ElevesClient({
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
-                      {e.formule}
+                      {e.formule_label}
                     </td>
                     <td className="px-4 py-3" style={{ minWidth: 140 }}>
                       <AvancementBar seances={e.nb_seances_realisees} mois={e.duree_contractuelle_mois} />

@@ -7,7 +7,8 @@ async function fetchEleves(actif: boolean) {
   const { rows } = await pool.query(
     `SELECT
       e.id::text, e.nom, e.email, e.telephone,
-      e.formule, e.duree_contractuelle_mois,
+      e.formule, COALESCE(f.label, e.formule) AS formule_label,
+      e.duree_contractuelle_mois,
       e.date_debut, e.date_fin_prevue, e.actif,
       e.mode_paiement, e.montant_total, e.nb_echeances,
       e.semaines_freeze_consommees, e.freeze_actif,
@@ -18,10 +19,11 @@ async function fetchEleves(actif: boolean) {
       COALESCE(BOOL_OR(s.alerte_decrochage), false)        AS has_alerte,
       ROUND(AVG(cre.satisfaction)::numeric, 1)             AS satisfaction_moyenne
     FROM eleves e
+    LEFT JOIN formules f           ON f.id = e.formule
     LEFT JOIN seances s            ON s.eleve_id = e.id
     LEFT JOIN compte_rendu_eleve cre ON cre.seance_id = s.id
     WHERE e.actif = $1
-    GROUP BY e.id
+    GROUP BY e.id, f.label
     ORDER BY e.created_at DESC`,
     [actif]
   )
