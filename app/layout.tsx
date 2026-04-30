@@ -35,7 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
 
           <nav className="flex-1 p-2 space-y-0.5">
-            <NavLink href="/leads">Pipeline Leads</NavLink>
+            <NavLink href="/leads">Leads</NavLink>
             <NavLink href="/eleves">Élèves</NavLink>
             <NavLink href="/finances">Finances</NavLink>
           </nav>
