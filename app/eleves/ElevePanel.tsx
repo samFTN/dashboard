@@ -354,6 +354,7 @@ export default function ElevePanel({
     objectifs: eleve.objectifs ?? '',
   })
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -446,6 +447,7 @@ export default function ElevePanel({
 
   async function saveEdit() {
     setSaving(true)
+    setSaveError(null)
     try {
       const body = {
         nom: editForm.nom.trim(),
@@ -465,12 +467,14 @@ export default function ElevePanel({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? `Erreur ${res.status}`)
+      }
       onChanged(body as Partial<EleveRow>)
-      setEditMode(false)
-    } catch {
-      // silently fail — could add error state
-    } finally {
+      onClose()
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde')
       setSaving(false)
     }
   }
@@ -543,7 +547,7 @@ export default function ElevePanel({
             ) : (
               <>
                 <button
-                  onClick={() => setEditMode(false)}
+                  onClick={() => { setEditMode(false); setSaveError(null) }}
                   style={{
                     fontSize: 12, padding: '5px 12px', border: '1px solid var(--border)',
                     borderRadius: 6, cursor: 'pointer', background: 'none', color: 'var(--muted2)',
@@ -557,10 +561,10 @@ export default function ElevePanel({
                   style={{
                     fontSize: 12, padding: '5px 12px', border: 'none',
                     borderRadius: 6, cursor: 'pointer', background: 'var(--accent)', color: '#fff',
-                    fontWeight: 600,
+                    fontWeight: 600, opacity: saving ? 0.7 : 1,
                   }}
                 >
-                  {saving ? '...' : 'Enregistrer'}
+                  {saving ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </>
             )}
@@ -578,6 +582,12 @@ export default function ElevePanel({
 
         {/* Body */}
         <div style={{ padding: '24px', flex: 1 }}>
+
+          {saveError && (
+            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 7, fontSize: 12, color: '#dc2626' }}>
+              {saveError}
+            </div>
+          )}
 
           {editMode ? (
             /* ── MODE ÉDITION ── */
