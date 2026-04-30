@@ -28,11 +28,6 @@ export type EleveRow = {
   satisfaction_moyenne: string | null
 }
 
-const FORMULE_LABELS: Record<string, string> = {
-  programme_4_mois: '4 mois',
-  programme_12_mois: '12 mois',
-}
-
 function satisfactionColor(val: string | null) {
   if (!val) return 'var(--muted)'
   const n = parseFloat(val)
@@ -180,7 +175,7 @@ export default function ElevesClient({
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
-                      {FORMULE_LABELS[e.formule] ?? e.formule}
+                      {e.formule}
                     </td>
                     <td className="px-4 py-3" style={{ minWidth: 140 }}>
                       <AvancementBar seances={e.nb_seances_realisees} mois={e.duree_contractuelle_mois} />
