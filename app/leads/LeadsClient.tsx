@@ -311,7 +311,7 @@ export default function LeadsClient({ initialLeads }: { initialLeads: LeadRow[] 
         <div className="flex items-start justify-between mb-5">
           <div>
             <h1 className="text-2xl font-black" style={{ color: 'var(--dark)', letterSpacing: '-0.5px' }}>
-              Pipeline Leads
+              Leads
             </h1>
             <p className="text-sm mt-0.5" style={{ color: 'var(--muted2)' }}>
               {leads.length} lead{leads.length > 1 ? 's' : ''} {showArchived ? 'archivé' : 'actif'}{leads.length > 1 ? 's' : ''}
