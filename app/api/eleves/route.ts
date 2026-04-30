@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
       `SELECT
         e.id::text, e.nom, e.email, e.telephone,
         e.formule, e.duree_contractuelle_mois,
+        COALESCE(e.nb_seances_prevues, e.duree_contractuelle_mois * 2)::int AS nb_seances_prevues,
         e.date_debut, e.date_fin_prevue, e.actif,
         e.mode_paiement, e.montant_total, e.nb_echeances,
         e.semaines_freeze_consommees, e.freeze_actif,

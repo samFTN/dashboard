@@ -25,6 +25,7 @@ export type EleveRow = {
   lead_id: string | null
   prof_dedie_id: string
   created_at: string
+  nb_seances_prevues: number
   nb_seances_realisees: number
   has_alerte: boolean
   satisfaction_moyenne: string | null
@@ -38,8 +39,7 @@ function satisfactionColor(val: string | null) {
   return '#dc2626'
 }
 
-function AvancementBar({ seances, mois }: { seances: number; mois: number }) {
-  const total = mois * 2
+function AvancementBar({ seances, total }: { seances: number; total: number }) {
   const pct = Math.min(100, Math.round((seances / total) * 100))
   return (
     <div className="flex items-center gap-2">
@@ -180,7 +180,7 @@ export default function ElevesClient({
                       {e.formule_label}
                     </td>
                     <td className="px-4 py-3" style={{ minWidth: 140 }}>
-                      <AvancementBar seances={e.nb_seances_realisees} mois={e.duree_contractuelle_mois} />
+                      <AvancementBar seances={e.nb_seances_realisees} total={e.nb_seances_prevues ?? e.duree_contractuelle_mois * 2} />
                     </td>
                     <td className="px-4 py-3 text-sm font-semibold" style={{ color: satisfactionColor(e.satisfaction_moyenne) }}>
                       {e.satisfaction_moyenne ? `${e.satisfaction_moyenne}/5` : '—'}

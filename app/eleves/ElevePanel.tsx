@@ -307,6 +307,7 @@ type EditForm = {
   telephone: string
   formule: string
   duree_contractuelle_mois: string
+  nb_seances_prevues: string
   date_debut: string
   date_fin_prevue: string
   mode_paiement: string
@@ -315,6 +316,13 @@ type EditForm = {
   prof_dedie_id: string
   objectifs: string
   notes: string
+}
+
+function addMonthsToDate(isoDate: string, months: number): string {
+  if (!isoDate) return ''
+  const d = new Date(isoDate)
+  d.setMonth(d.getMonth() + months)
+  return d.toISOString().slice(0, 10)
 }
 
 type Formule = { id: string; label: string; duree_mois: number }
@@ -353,6 +361,7 @@ export default function ElevePanel({
     telephone: eleve.telephone ?? '',
     formule: eleve.formule,
     duree_contractuelle_mois: String(eleve.duree_contractuelle_mois ?? 4),
+    nb_seances_prevues: String(eleve.nb_seances_prevues ?? (eleve.duree_contractuelle_mois ?? 4) * 2),
     date_debut: eleve.date_debut?.slice(0, 10) ?? '',
     date_fin_prevue: eleve.date_fin_prevue?.slice(0, 10) ?? '',
     mode_paiement: eleve.mode_paiement,
@@ -465,6 +474,7 @@ export default function ElevePanel({
         telephone: editForm.telephone.trim() || null,
         formule: editForm.formule,
         duree_contractuelle_mois: parseInt(editForm.duree_contractuelle_mois) || 4,
+        nb_seances_prevues: parseInt(editForm.nb_seances_prevues) || null,
         date_debut: editForm.date_debut || null,
         date_fin_prevue: editForm.date_fin_prevue || null,
         mode_paiement: editForm.mode_paiement,
@@ -558,6 +568,7 @@ export default function ElevePanel({
                     telephone: eleve.telephone ?? '',
                     formule: eleve.formule,
                     duree_contractuelle_mois: String(eleve.duree_contractuelle_mois ?? 4),
+                    nb_seances_prevues: String(eleve.nb_seances_prevues ?? (eleve.duree_contractuelle_mois ?? 4) * 2),
                     date_debut: eleve.date_debut?.slice(0, 10) ?? '',
                     date_fin_prevue: eleve.date_fin_prevue?.slice(0, 10) ?? '',
                     mode_paiement: eleve.mode_paiement,
@@ -565,7 +576,7 @@ export default function ElevePanel({
                     nb_echeances: String(eleve.nb_echeances ?? ''),
                     prof_dedie_id: eleve.prof_dedie_id ?? '',
                     objectifs: eleve.objectifs ?? '',
-    notes: eleve.notes ?? '',
+                    notes: eleve.notes ?? '',
                   })
                   setEditMode(true)
                 }}
@@ -703,26 +714,63 @@ export default function ElevePanel({
                 )}
               </div>
 
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Nb séances prévues</label>
-                <input type="number" min={1} value={String(parseInt(editForm.duree_contractuelle_mois || '4') * 2)}
-                  onChange={e => setEditForm(p => ({ ...p, duree_contractuelle_mois: String(Math.ceil(parseInt(e.target.value) / 2)) }))}
-                  style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>= {editForm.duree_contractuelle_mois || 4} mois × 2 séances/mois</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Durée (mois)</label>
+                  <input
+                    type="number" min={1}
+                    value={editForm.duree_contractuelle_mois}
+                    onChange={e => {
+                      const mois = parseInt(e.target.value) || 1
+                      const newFin = addMonthsToDate(editForm.date_debut, mois)
+                      setEditForm(p => ({
+                        ...p,
+                        duree_contractuelle_mois: String(mois),
+                        nb_seances_prevues: String(mois * 2),
+                        date_fin_prevue: newFin || p.date_fin_prevue,
+                      }))
+                    }}
+                    style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Séances prévues</label>
+                  <input
+                    type="number" min={1}
+                    value={editForm.nb_seances_prevues}
+                    onChange={e => setEditForm(p => ({ ...p, nb_seances_prevues: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }}
+                  />
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                {[
-                  { key: 'date_debut', label: 'Date de début' },
-                  { key: 'date_fin_prevue', label: 'Date de fin prévue' },
-                ].map(({ key, label }) => (
-                  <div key={key}>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</label>
-                    <input type="date" value={(editForm as Record<string, string>)[key]}
-                      onChange={e => setEditForm(p => ({ ...p, [key]: e.target.value }))}
-                      style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
-                  </div>
-                ))}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Date de début</label>
+                  <input
+                    type="date"
+                    value={editForm.date_debut}
+                    onChange={e => {
+                      const mois = parseInt(editForm.duree_contractuelle_mois) || 4
+                      const newFin = addMonthsToDate(e.target.value, mois)
+                      setEditForm(p => ({
+                        ...p,
+                        date_debut: e.target.value,
+                        date_fin_prevue: newFin || p.date_fin_prevue,
+                      }))
+                    }}
+                    style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Date de fin prévue</label>
+                  <input
+                    type="date"
+                    value={editForm.date_fin_prevue}
+                    onChange={e => setEditForm(p => ({ ...p, date_fin_prevue: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }}
+                  />
+                </div>
               </div>
 
               <div style={{ marginBottom: 12 }}>
