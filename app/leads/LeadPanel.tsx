@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { LeadRow } from './LeadsClient'
+
+type Formule = { id: string; label: string; duree_mois: number }
 
 const STATUT_LABELS: Record<string, string> = {
   nouveau: 'Nouveau',
@@ -59,6 +61,11 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
   })
   const [error, setError] = useState<string | null>(null)
   const [showConvertModal, setShowConvertModal] = useState(false)
+  const [formules, setFormules] = useState<Formule[]>([])
+
+  useEffect(() => {
+    fetch('/api/formules').then(r => r.json()).then(setFormules)
+  }, [])
   const [convertForm, setConvertForm] = useState({
     formule: 'programme_4_mois',
     date_debut: new Date().toISOString().slice(0, 10),
@@ -633,8 +640,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                   style={inputStyle}
                   required
                 >
-                  <option value="programme_4_mois">Programme 4 mois</option>
-                  <option value="programme_12_mois">Programme 12 mois</option>
+                  {formules.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
                 </select>
               </div>
               <div>
@@ -655,6 +661,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                   style={inputStyle}
                   required
                 >
+                  <option value="cb_1x">CB 1×</option>
                   <option value="cb_2x">CB 2×</option>
                   <option value="cb_3x">CB 3×</option>
                   <option value="cb_4x">CB 4×</option>

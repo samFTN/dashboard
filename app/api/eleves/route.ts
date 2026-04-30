@@ -34,7 +34,10 @@ export async function GET(req: NextRequest) {
 
 // Calcule nb_echeances depuis mode_paiement
 function nbEcheances(mode: string) {
-  return mode === 'cb_2x' ? 2 : mode === 'cb_3x' ? 3 : 4 // cb_4x et paypal_4x = 4
+  if (mode === 'cb_1x') return 1
+  if (mode === 'cb_2x') return 2
+  if (mode === 'cb_3x') return 3
+  return 4 // cb_4x et paypal_4x
 }
 
 // Ajoute N mois à une date ISO
@@ -63,7 +66,11 @@ export async function POST(req: NextRequest) {
     }
     const lead = leadRows[0]
 
-    const dureeMois = formule === 'programme_4_mois' ? 4 : 12
+    // Récupère duree_mois depuis la table formules
+    const { rows: formuleRows } = await pool.query(
+      `SELECT duree_mois FROM formules WHERE id = $1`, [formule]
+    )
+    const dureeMois = formuleRows.length > 0 ? formuleRows[0].duree_mois : 4
     const dateFinPrevue = addMonths(date_debut, dureeMois)
     const nb = nbEcheances(mode_paiement)
     const montantTotal = 597

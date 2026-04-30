@@ -315,6 +315,12 @@ type EditForm = {
   objectifs: string
 }
 
+type Formule = { id: string; label: string; duree_mois: number }
+
+const MODE_LABELS: Record<string, string> = {
+  cb_1x: 'CB 1×', cb_2x: 'CB 2×', cb_3x: 'CB 3×', cb_4x: 'CB 4×', paypal_4x: 'PayPal 4×',
+}
+
 export default function ElevePanel({
   eleve,
   onClose,
@@ -330,6 +336,10 @@ export default function ElevePanel({
   const [newSeanceDate, setNewSeanceDate] = useState(new Date().toISOString().slice(0, 10))
   const [freezeLoading, setFreezeLoading] = useState(false)
   const [editMode, setEditMode] = useState(false)
+  const [formules, setFormules] = useState<Formule[]>([])
+  const [showGererFormules, setShowGererFormules] = useState(false)
+  const [newFormule, setNewFormule] = useState({ label: '', duree_mois: '4' })
+  const [confirmDeleteFormule, setConfirmDeleteFormule] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<EditForm>({
     nom: eleve.nom,
     email: eleve.email ?? '',
@@ -345,6 +355,10 @@ export default function ElevePanel({
   })
   const [saving, setSaving] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    fetch('/api/formules').then(r => r.json()).then(setFormules)
+  }, [])
 
   useEffect(() => {
     setLoading(true)
@@ -412,6 +426,24 @@ export default function ElevePanel({
     })
   }
 
+  async function addFormule() {
+    if (!newFormule.label.trim()) return
+    const res = await fetch('/api/formules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: newFormule.label, duree_mois: parseInt(newFormule.duree_mois) }),
+    })
+    const f = await res.json()
+    setFormules(prev => [...prev, f])
+    setNewFormule({ label: '', duree_mois: '4' })
+  }
+
+  async function deleteFormule(id: string) {
+    await fetch(`/api/formules/${id}`, { method: 'DELETE' })
+    setFormules(prev => prev.filter(f => f.id !== id))
+    setConfirmDeleteFormule(null)
+  }
+
   async function saveEdit() {
     setSaving(true)
     try {
@@ -443,13 +475,8 @@ export default function ElevePanel({
     }
   }
 
-  const MODE_LABELS: Record<string, string> = {
-    cb_2x: 'CB 2×', cb_3x: 'CB 3×', cb_4x: 'CB 4×', paypal_4x: 'PayPal 4×',
-  }
-
-  const FORMULE_LABELS: Record<string, string> = {
-    programme_4_mois: 'Programme 4 mois',
-    programme_12_mois: 'Programme 12 mois',
+  function getFormuleLabel(id: string) {
+    return formules.find(f => f.id === id)?.label ?? id
   }
 
   return (
@@ -575,9 +602,62 @@ export default function ElevePanel({
                 <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Formule</label>
                 <select value={editForm.formule} onChange={e => setEditForm(p => ({ ...p, formule: e.target.value }))}
                   style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }}>
-                  <option value="programme_4_mois">Programme 4 mois</option>
-                  <option value="programme_12_mois">Programme 12 mois</option>
+                  {formules.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
                 </select>
+
+                {/* Gestion des formules */}
+                <button
+                  type="button"
+                  onClick={() => setShowGererFormules(v => !v)}
+                  style={{ marginTop: 6, fontSize: 11, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                >
+                  {showGererFormules ? 'Masquer' : 'Gérer les formules'}
+                </button>
+
+                {showGererFormules && (
+                  <div style={{ marginTop: 8, padding: '10px 12px', background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                    {formules.map(f => (
+                      <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, color: 'var(--text)' }}>{f.label} <span style={{ color: 'var(--muted)' }}>({f.duree_mois} mois)</span></span>
+                        {confirmDeleteFormule === f.id ? (
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button onClick={() => deleteFormule(f.id)}
+                              style={{ fontSize: 11, padding: '2px 8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+                              Confirmer
+                            </button>
+                            <button onClick={() => setConfirmDeleteFormule(null)}
+                              style={{ fontSize: 11, padding: '2px 8px', background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}>
+                              Annuler
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmDeleteFormule(f.id)}
+                            style={{ fontSize: 11, padding: '2px 6px', background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--muted)' }}>
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                      <input
+                        type="text" placeholder="Nom de la formule"
+                        value={newFormule.label}
+                        onChange={e => setNewFormule(p => ({ ...p, label: e.target.value }))}
+                        style={{ flex: 1, padding: '5px 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
+                      />
+                      <input
+                        type="number" min={1} placeholder="mois"
+                        value={newFormule.duree_mois}
+                        onChange={e => setNewFormule(p => ({ ...p, duree_mois: e.target.value }))}
+                        style={{ width: 55, padding: '5px 6px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
+                      />
+                      <button onClick={addFormule}
+                        style={{ padding: '5px 10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        +
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -598,6 +678,7 @@ export default function ElevePanel({
                 <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Mode de paiement</label>
                 <select value={editForm.mode_paiement} onChange={e => setEditForm(p => ({ ...p, mode_paiement: e.target.value }))}
                   style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }}>
+                  <option value="cb_1x">CB 1×</option>
                   <option value="cb_2x">CB 2×</option>
                   <option value="cb_3x">CB 3×</option>
                   <option value="cb_4x">CB 4×</option>
@@ -652,7 +733,7 @@ export default function ElevePanel({
               )}
 
               <Section title="Programme">
-                <Row label="Formule" value={FORMULE_LABELS[eleve.formule] ?? eleve.formule} />
+                <Row label="Formule" value={getFormuleLabel(eleve.formule)} />
                 <Row label="Début" value={fmt(eleve.date_debut)} />
                 <Row label="Fin prévue" value={fmt(eleve.date_fin_prevue)} />
                 <Row label="Paiement" value={`${MODE_LABELS[eleve.mode_paiement] ?? eleve.mode_paiement} · ${eleve.montant_total} €`} />
