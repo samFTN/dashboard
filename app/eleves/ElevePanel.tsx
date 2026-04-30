@@ -320,9 +320,16 @@ export default function ElevePanel({
   useEffect(() => {
     setLoading(true)
     fetch(`/api/eleves/${eleve.id}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
       .then(data => {
         setDetail(data)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('[ElevePanel fetch]', err)
         setLoading(false)
       })
   }, [eleve.id])

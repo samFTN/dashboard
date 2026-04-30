@@ -46,22 +46,19 @@ export async function GET(
           ) FILTER (WHERE s.id IS NOT NULL),
           '[]'::json
         ) AS seances,
-        COALESCE(
-          json_agg(
-            DISTINCT json_build_object(
-              'id',         f.id::text,
-              'date_debut', f.date_debut,
-              'date_fin',   f.date_fin,
-              'semaines_duree', f.semaines_duree
-            )
-          ) FILTER (WHERE f.id IS NOT NULL),
-          '[]'::json
+        (
+          SELECT COALESCE(json_agg(json_build_object(
+            'id',             f.id::text,
+            'date_debut',     f.date_debut,
+            'date_fin',       f.date_fin,
+            'semaines_duree', f.semaines_duree
+          ) ORDER BY f.date_debut), '[]'::json)
+          FROM freezes f WHERE f.eleve_id = e.id
         ) AS freezes
       FROM eleves e
       LEFT JOIN seances s             ON s.eleve_id = e.id
       LEFT JOIN compte_rendu_prof crp ON crp.seance_id = s.id
       LEFT JOIN compte_rendu_eleve cre ON cre.seance_id = s.id
-      LEFT JOIN freezes f             ON f.eleve_id = e.id
       WHERE e.id = $1
       GROUP BY e.id`,
       [id]
