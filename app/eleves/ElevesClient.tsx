@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import ElevePanel from './ElevePanel'
+import ImportCSVModal from './ImportCSVModal'
 
 export type EleveRow = {
   id: string
@@ -70,6 +71,7 @@ export default function ElevesClient({
   const [actifs, setActifs] = useState<EleveRow[]>(initialActifs)
   const [anciens, setAnciens] = useState<EleveRow[]>(initialAnciens)
   const [selected, setSelected] = useState<EleveRow | null>(null)
+  const [showImport, setShowImport] = useState(false)
 
   const list = tab === 'actifs' ? actifs : anciens
 
@@ -94,6 +96,13 @@ export default function ElevesClient({
               {actifs.length} actif{actifs.length !== 1 ? 's' : ''} · {anciens.length} ancien{anciens.length !== 1 ? 's' : ''}
             </p>
           </div>
+          <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+            style={{ background: 'var(--dark)', color: 'white' }}
+          >
+            <span>↑</span> Importer CSV
+          </button>
         </div>
 
         {/* Tabs */}
@@ -128,7 +137,7 @@ export default function ElevesClient({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
-                {['Nom', 'Formule', 'Avancement', 'Satisfaction', 'Points', 'Alerte'].map(col => (
+                {['Nom', 'Formule', 'Avancement', 'Satisfaction', 'Points', 'Alerte', 'Notes'].map(col => (
                   <th
                     key={col}
                     className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider"
@@ -142,7 +151,7 @@ export default function ElevesClient({
             <tbody>
               {list.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center text-sm" style={{ color: 'var(--muted)' }}>
+                  <td colSpan={7} className="px-4 py-16 text-center text-sm" style={{ color: 'var(--muted)' }}>
                     Aucun élève
                   </td>
                 </tr>
@@ -200,6 +209,20 @@ export default function ElevesClient({
                         <span className="text-xs" style={{ color: 'var(--muted)' }}>—</span>
                       )}
                     </td>
+                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--muted)', maxWidth: 200 }}>
+                      {e.notes ? (
+                        <span
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {e.notes}
+                        </span>
+                      ) : '—'}
+                    </td>
                   </tr>
                 ))
               )}
@@ -214,6 +237,22 @@ export default function ElevesClient({
           eleve={selected}
           onClose={() => setSelected(null)}
           onChanged={(changes) => handleEleveChanged(selected.id, changes)}
+        />
+      )}
+
+      {/* Import CSV */}
+      {showImport && (
+        <ImportCSVModal
+          eleves={[...actifs, ...anciens]}
+          onClose={() => setShowImport(false)}
+          onImported={(eleveId, nbSeances) => {
+            // Met à jour le compteur de séances de l'élève dans la liste
+            if (nbSeances > 0) {
+              handleEleveChanged(eleveId, {
+                nb_seances_realisees: (actifs.find(e => e.id === eleveId) ?? anciens.find(e => e.id === eleveId))!.nb_seances_realisees + nbSeances,
+              })
+            }
+          }}
         />
       )}
     </div>
