@@ -74,10 +74,12 @@ function SeanceCard({
   seance,
   eleveId,
   onUpdated,
+  onDeleted,
 }: {
   seance: Seance
   eleveId: string
   onUpdated: (s: Seance) => void
+  onDeleted: (id: string) => void
 }) {
   const [openProf, setOpenProf] = useState(false)
   const [openEleve, setOpenEleve] = useState(false)
@@ -144,12 +146,26 @@ function SeanceCard({
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {seance.volet_prof && (
             <span style={{ fontSize: 10, color: '#16a34a', fontWeight: 600 }}>
               {seance.volet_prof.points_jeux}pts
             </span>
           )}
+          <button
+            onClick={async () => {
+              if (!confirm(`Supprimer la séance #${seance.numero_seance} ?`)) return
+              const res = await fetch(`/api/eleves/${eleveId}/seances/${seance.id}`, { method: 'DELETE' })
+              if (res.ok) onDeleted(seance.id)
+            }}
+            style={{
+              fontSize: 11, padding: '1px 7px', background: 'none',
+              border: '1px solid var(--border)', borderRadius: 4,
+              cursor: 'pointer', color: 'var(--muted)',
+            }}
+          >
+            ×
+          </button>
         </div>
       </div>
 
@@ -442,6 +458,17 @@ export default function ElevePanel({
       const hasAlerte = seances.some(s => s.alerte_decrochage && !s.volet_eleve?.date_remplissage)
       const totalPoints = seances.reduce((acc, s) => acc + (s.volet_prof?.points_jeux ?? 0), 0)
       onChanged({ has_alerte: hasAlerte, points_total: totalPoints })
+      return { ...prev, seances }
+    })
+  }
+
+  function deleteSeance(sid: string) {
+    setDetail(prev => {
+      if (!prev) return prev
+      const seances = prev.seances.filter(s => s.id !== sid)
+      const hasAlerte = seances.some(s => s.alerte_decrochage && !s.volet_eleve?.date_remplissage)
+      const totalPoints = seances.reduce((acc, s) => acc + (s.volet_prof?.points_jeux ?? 0), 0)
+      onChanged({ nb_seances_realisees: seances.length, has_alerte: hasAlerte, points_total: totalPoints })
       return { ...prev, seances }
     })
   }
@@ -1059,6 +1086,7 @@ export default function ElevePanel({
                 seance={s}
                 eleveId={eleve.id}
                 onUpdated={updateSeance}
+                onDeleted={deleteSeance}
               />
             ))}
           </Section>
