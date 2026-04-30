@@ -474,7 +474,8 @@ export default function ElevePanel({
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error ?? `Erreur ${res.status}`)
       }
-      onChanged(body as Partial<EleveRow>)
+      const formule_label = formules.find(f => f.id === editForm.formule)?.label ?? editForm.formule
+      onChanged({ ...(body as Partial<EleveRow>), formule_label })
       onClose()
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde')
