@@ -94,8 +94,7 @@ CREATE TABLE IF NOT EXISTS eleves (
   prof_dedie_id            TEXT NOT NULL REFERENCES profs(id),
 
   -- Paiement
-  mode_paiement            TEXT NOT NULL
-                           CHECK (mode_paiement IN ('cb_2x','cb_3x','cb_4x','paypal_4x')),
+  mode_paiement            TEXT NOT NULL,
   montant_total            NUMERIC(8,2) NOT NULL DEFAULT 597,
   nb_echeances             INTEGER NOT NULL,
 
@@ -180,10 +179,8 @@ CREATE TABLE IF NOT EXISTS inscriptions_financieres (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   eleve_id         UUID NOT NULL REFERENCES eleves(id) ON DELETE CASCADE,
   date_inscription DATE NOT NULL,
-  formule          TEXT NOT NULL
-                   CHECK (formule IN ('programme_4_mois','renouvellement_12_mois_avec_prof','renouvellement_12_mois_sans_prof')),
-  mode_paiement    TEXT NOT NULL
-                   CHECK (mode_paiement IN ('cb_2x','cb_3x','cb_4x','paypal_4x')),
+  formule          TEXT NOT NULL,
+  mode_paiement    TEXT NOT NULL,
   montant_contracte NUMERIC(8,2) NOT NULL
   -- montant_encaisse et reste_a_encaisser sont calculés depuis echeances
 );
