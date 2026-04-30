@@ -14,7 +14,7 @@ export async function GET(
         e.date_debut, e.date_fin_prevue, e.date_fin_reelle, e.actif,
         e.mode_paiement, e.montant_total, e.nb_echeances,
         e.semaines_freeze_consommees, e.freeze_actif,
-        e.objectifs, e.points_total,
+        e.objectifs, e.notes, e.points_total,
         e.lead_id::text, e.prof_dedie_id,
         e.created_at, e.updated_at,
         COALESCE(
@@ -75,7 +75,7 @@ const ALLOWED = [
   'nom', 'email', 'telephone',
   'formule', 'duree_contractuelle_mois', 'date_debut', 'date_fin_prevue', 'date_fin_reelle',
   'mode_paiement', 'montant_total', 'nb_echeances',
-  'prof_dedie_id', 'objectifs', 'actif',
+  'prof_dedie_id', 'objectifs', 'notes', 'actif',
 ] as const
 
 export async function PATCH(

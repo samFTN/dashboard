@@ -20,6 +20,7 @@ export type EleveRow = {
   semaines_freeze_consommees: number
   freeze_actif: boolean
   objectifs: string
+  notes: string
   points_total: number
   lead_id: string | null
   prof_dedie_id: string

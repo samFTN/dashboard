@@ -314,6 +314,7 @@ type EditForm = {
   nb_echeances: string
   prof_dedie_id: string
   objectifs: string
+  notes: string
 }
 
 type Formule = { id: string; label: string; duree_mois: number }
@@ -359,6 +360,7 @@ export default function ElevePanel({
     nb_echeances: String(eleve.nb_echeances ?? ''),
     prof_dedie_id: eleve.prof_dedie_id ?? '',
     objectifs: eleve.objectifs ?? '',
+    notes: eleve.notes ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -470,6 +472,7 @@ export default function ElevePanel({
         nb_echeances: parseInt(editForm.nb_echeances) || null,
         prof_dedie_id: editForm.prof_dedie_id.trim() || null,
         objectifs: editForm.objectifs.trim() || null,
+        notes: editForm.notes.trim(),
       }
       const res = await fetch(`/api/eleves/${eleve.id}`, {
         method: 'PATCH',
@@ -562,6 +565,7 @@ export default function ElevePanel({
                     nb_echeances: String(eleve.nb_echeances ?? ''),
                     prof_dedie_id: eleve.prof_dedie_id ?? '',
                     objectifs: eleve.objectifs ?? '',
+    notes: eleve.notes ?? '',
                   })
                   setEditMode(true)
                 }}
@@ -806,6 +810,14 @@ export default function ElevePanel({
                   onChange={e => setEditForm(p => ({ ...p, objectifs: e.target.value }))}
                   style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit', resize: 'vertical' }} />
               </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Notes internes</label>
+                <textarea value={editForm.notes} rows={3}
+                  onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))}
+                  placeholder="Notes visibles uniquement dans le dashboard..."
+                  style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit', resize: 'vertical' }} />
+              </div>
             </div>
           ) : (
             /* ── MODE LECTURE ── */
@@ -820,6 +832,20 @@ export default function ElevePanel({
                   </div>
                   <p style={{ margin: 0, fontSize: 13, color: 'var(--dark)', lineHeight: 1.5 }}>
                     {eleve.objectifs}
+                  </p>
+                </div>
+              )}
+
+              {eleve.notes && (
+                <div style={{
+                  background: 'var(--border2)', border: '1px solid var(--border)',
+                  borderRadius: 8, padding: '10px 14px', marginBottom: 24,
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
+                    Notes internes
+                  </div>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--dark)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                    {eleve.notes}
                   </p>
                 </div>
               )}

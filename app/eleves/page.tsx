@@ -12,7 +12,7 @@ async function fetchEleves(actif: boolean) {
       e.date_debut, e.date_fin_prevue, e.actif,
       e.mode_paiement, e.montant_total, e.nb_echeances,
       e.semaines_freeze_consommees, e.freeze_actif,
-      e.objectifs, e.points_total,
+      e.objectifs, e.notes, e.points_total,
       e.lead_id::text, e.prof_dedie_id,
       e.created_at,
       COUNT(s.id)::int                                     AS nb_seances_realisees,
