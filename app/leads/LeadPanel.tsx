@@ -290,6 +290,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                 <option value="qualifie">Qualifié</option>
                 <option value="reserve">Réservé</option>
                 <option value="present">Présent</option>
+                <option value="eleve">Élève</option>
               </select>
             </div>
             <div>
