@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       LEFT JOIN compte_rendu_eleve cre ON cre.seance_id = s.id
       WHERE e.actif = $1
       GROUP BY e.id
-      ORDER BY e.created_at DESC`,
+      ORDER BY e.date_debut DESC`,
       [actif]
     )
     return NextResponse.json(rows)
