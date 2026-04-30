@@ -312,6 +312,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                   <label className="text-xs mb-1 block" style={{ color: 'var(--muted2)' }}>Date et heure</label>
                   <input
                     type="datetime-local"
+                    step={900}
                     value={currentLead.cours_essai_date?.slice(0, 16) ?? ''}
                     onChange={e => handleCoursEssaiChange('cours_essai_date', e.target.value || null as unknown as string)}
                     style={inputStyle}
