@@ -24,7 +24,7 @@ async function fetchEleves(actif: boolean) {
     LEFT JOIN compte_rendu_eleve cre ON cre.seance_id = s.id
     WHERE e.actif = $1
     GROUP BY e.id, f.label
-    ORDER BY e.created_at DESC`,
+    ORDER BY e.date_debut DESC`,
     [actif]
   )
   return rows
