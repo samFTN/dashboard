@@ -58,6 +58,13 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
     note: currentLead.prochaine_action_note ?? '',
   })
   const [error, setError] = useState<string | null>(null)
+  const [showConvertModal, setShowConvertModal] = useState(false)
+  const [convertForm, setConvertForm] = useState({
+    formule: 'programme_4_mois',
+    date_debut: new Date().toISOString().slice(0, 10),
+    mode_paiement: 'cb_2x',
+    objectifs: lead.objectifs ?? '',
+  })
 
   function todayIso() {
     return new Date().toISOString().slice(0, 10)
@@ -151,27 +158,24 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
     }
   }
 
-  async function handleConvertirEleve() {
-    if (!confirm('Convertir ce lead en élève ? La fiche lead sera archivée. (La fiche élève sera créée à l\'étape 4.)')) return
+  async function handleConvertirEleve(e: React.FormEvent) {
+    e.preventDefault()
     setSaving(true)
     setError(null)
     try {
-      const res = await fetch(`/api/leads/${currentLead.id}/archiver`, {
+      const res = await fetch('/api/eleves', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ raison: 'abandon' }), // placeholder — sera refactoré à l'étape 4
+        body: JSON.stringify({ lead_id: currentLead.id, ...convertForm }),
       })
-      if (!res.ok) throw new Error()
-
-      // Also update statut to 'eleve'
-      await fetch(`/api/leads/${currentLead.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ statut: 'eleve' }),
-      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Erreur')
+      }
+      setShowConvertModal(false)
       onArchived()
-    } catch {
-      setError('Erreur lors de la conversion')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la conversion')
       setSaving(false)
     }
   }
@@ -534,7 +538,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
           {/* Convertir en élève (uniquement si statut = present) */}
           {currentLead.statut === 'present' && (
             <button
-              onClick={handleConvertirEleve}
+              onClick={() => setShowConvertModal(true)}
               disabled={saving}
               className="w-full py-2.5 rounded-xl text-sm font-semibold"
               style={{ background: 'var(--accent)', color: 'white' }}
@@ -585,6 +589,97 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
           )}
         </div>
       </div>
+      {/* Modal conversion en élève */}
+      {showConvertModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.4)',
+        }}>
+          <div style={{
+            background: 'var(--card)', borderRadius: 12, padding: 28, width: 420,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          }}>
+            <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: 'var(--dark)' }}>
+              Convertir en élève
+            </h3>
+            <form onSubmit={handleConvertirEleve} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--muted2)', display: 'block', marginBottom: 4 }}>Formule</label>
+                <select
+                  value={convertForm.formule}
+                  onChange={e => setConvertForm(p => ({ ...p, formule: e.target.value }))}
+                  style={inputStyle}
+                  required
+                >
+                  <option value="programme_4_mois">Programme 4 mois</option>
+                  <option value="programme_12_mois">Programme 12 mois</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--muted2)', display: 'block', marginBottom: 4 }}>Date de début</label>
+                <input
+                  type="date"
+                  value={convertForm.date_debut}
+                  onChange={e => setConvertForm(p => ({ ...p, date_debut: e.target.value }))}
+                  style={inputStyle}
+                  required
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--muted2)', display: 'block', marginBottom: 4 }}>Mode de paiement</label>
+                <select
+                  value={convertForm.mode_paiement}
+                  onChange={e => setConvertForm(p => ({ ...p, mode_paiement: e.target.value }))}
+                  style={inputStyle}
+                  required
+                >
+                  <option value="cb_2x">CB 2×</option>
+                  <option value="cb_3x">CB 3×</option>
+                  <option value="cb_4x">CB 4×</option>
+                  <option value="paypal_4x">PayPal 4×</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--muted2)', display: 'block', marginBottom: 4 }}>Objectifs</label>
+                <textarea
+                  value={convertForm.objectifs}
+                  onChange={e => setConvertForm(p => ({ ...p, objectifs: e.target.value }))}
+                  rows={3}
+                  style={{ ...inputStyle, resize: 'vertical' }}
+                  placeholder="Objectifs de l'élève..."
+                />
+              </div>
+              {error && (
+                <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', padding: '8px 12px', borderRadius: 6 }}>
+                  {error}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => { setShowConvertModal(false); setError(null) }}
+                  style={{
+                    flex: 1, padding: '9px 0', border: '1.5px solid var(--border)', borderRadius: 8,
+                    background: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--muted2)', fontWeight: 500,
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  style={{
+                    flex: 1, padding: '9px 0', background: 'var(--accent)', border: 'none', borderRadius: 8,
+                    cursor: 'pointer', fontSize: 13, color: 'white', fontWeight: 600,
+                  }}
+                >
+                  {saving ? 'Création...' : 'Créer l\'élève'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   )
 }
