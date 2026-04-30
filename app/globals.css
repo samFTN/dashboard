@@ -17,3 +17,14 @@ body {
   background: var(--bg);
   color: var(--text);
 }
+
+/* Responsive panels */
+.panel-slide { width: 420px; }
+.panel-slide-wide { width: 460px; }
+
+@media (max-width: 767px) {
+  .panel-slide,
+  .panel-slide-wide {
+    width: 100% !important;
+  }
+}

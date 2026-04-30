@@ -307,7 +307,7 @@ export default function LeadsClient({ initialLeads }: { initialLeads: LeadRow[] 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-8 pt-8 pb-0">
+      <div className="px-4 md:px-8 pt-6 md:pt-8 pb-0">
         <div className="flex items-start justify-between mb-5">
           <div>
             <h1 className="text-2xl font-black" style={{ color: 'var(--dark)', letterSpacing: '-0.5px' }}>
@@ -329,7 +329,7 @@ export default function LeadsClient({ initialLeads }: { initialLeads: LeadRow[] 
         </div>
 
         {/* Tabs + Filters */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-xl overflow-hidden" style={{ border: '1.5px solid var(--border)' }}>
             {[{ label: 'Actifs', archived: false }, { label: 'Archivés', archived: true }].map(({ label, archived }) => (
               <button
@@ -364,12 +364,12 @@ export default function LeadsClient({ initialLeads }: { initialLeads: LeadRow[] 
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto px-8 py-5">
+      <div className="flex-1 overflow-auto px-4 md:px-8 py-4 md:py-5">
         <div
-          className="rounded-2xl overflow-hidden"
+          className="rounded-2xl overflow-hidden overflow-x-auto"
           style={{ border: '1px solid var(--border)', background: 'var(--card)' }}
         >
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full text-sm border-collapse" style={{ minWidth: 560 }}>
             <thead>
               <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
                 {['Nom', 'Statut', 'Source', 'Entrée', 'Dernier contact', 'Prochaine action'].map(col => (

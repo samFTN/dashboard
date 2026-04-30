@@ -242,9 +242,8 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
 
       {/* Panel */}
       <div
-        className="fixed right-0 top-0 bottom-0 z-50 flex flex-col overflow-hidden"
+        className="panel-slide fixed right-0 top-0 bottom-0 z-50 flex flex-col overflow-hidden"
         style={{
-          width: 420,
           background: 'var(--card)',
           borderLeft: '1px solid var(--border)',
           boxShadow: '-8px 0 32px rgba(0,0,0,0.08)',

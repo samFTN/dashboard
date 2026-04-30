@@ -564,8 +564,9 @@ export default function ElevePanel({
       {/* Panel */}
       <div
         ref={panelRef}
+        className="panel-slide-wide"
         style={{
-          position: 'fixed', top: 0, right: 0, bottom: 0, width: 460,
+          position: 'fixed', top: 0, right: 0, bottom: 0,
           background: 'var(--card)', zIndex: 50, display: 'flex', flexDirection: 'column',
           boxShadow: '-4px 0 24px rgba(0,0,0,0.1)',
           overflowY: 'auto',

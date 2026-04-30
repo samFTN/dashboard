@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import Image from 'next/image'
 import './globals.css'
 import NavLink from './components/NavLink'
+import MobileNav from './components/MobileNav'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -17,9 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" className={`${inter.className} h-full`}>
       <body className="h-full flex overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-        {/* Sidebar */}
+        {/* Sidebar — desktop only */}
         <aside
-          className="w-52 shrink-0 flex flex-col"
+          className="hidden md:flex md:w-52 shrink-0 flex-col"
           style={{ background: 'var(--card)', borderRight: '1px solid var(--border)' }}
         >
           <div className="px-5 py-4 flex flex-col items-center" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -47,9 +48,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto pb-16 md:pb-0">
           {children}
         </main>
+
+        {/* Mobile bottom nav */}
+        <MobileNav />
       </body>
     </html>
   )
