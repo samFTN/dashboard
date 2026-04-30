@@ -73,7 +73,7 @@ export async function GET(
 
 const ALLOWED = [
   'nom', 'email', 'telephone',
-  'formule', 'date_debut', 'date_fin_prevue', 'date_fin_reelle',
+  'formule', 'duree_contractuelle_mois', 'date_debut', 'date_fin_prevue', 'date_fin_reelle',
   'mode_paiement', 'montant_total', 'nb_echeances',
   'prof_dedie_id', 'objectifs', 'actif',
 ] as const

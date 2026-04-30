@@ -306,6 +306,7 @@ type EditForm = {
   email: string
   telephone: string
   formule: string
+  duree_contractuelle_mois: string
   date_debut: string
   date_fin_prevue: string
   mode_paiement: string
@@ -340,13 +341,17 @@ export default function ElevePanel({
   const [formules, setFormules] = useState<Formule[]>([])
   const [profs, setProfs] = useState<Prof[]>([])
   const [showGererFormules, setShowGererFormules] = useState(false)
+  const [showGererProfs, setShowGererProfs] = useState(false)
   const [newFormule, setNewFormule] = useState({ label: '', duree_mois: '4' })
+  const [newProfNom, setNewProfNom] = useState('')
   const [confirmDeleteFormule, setConfirmDeleteFormule] = useState<string | null>(null)
+  const [confirmDeleteProf, setConfirmDeleteProf] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<EditForm>({
     nom: eleve.nom,
     email: eleve.email ?? '',
     telephone: eleve.telephone ?? '',
     formule: eleve.formule,
+    duree_contractuelle_mois: String(eleve.duree_contractuelle_mois ?? 4),
     date_debut: eleve.date_debut?.slice(0, 10) ?? '',
     date_fin_prevue: eleve.date_fin_prevue?.slice(0, 10) ?? '',
     mode_paiement: eleve.mode_paiement,
@@ -457,6 +462,7 @@ export default function ElevePanel({
         email: editForm.email.trim() || null,
         telephone: editForm.telephone.trim() || null,
         formule: editForm.formule,
+        duree_contractuelle_mois: parseInt(editForm.duree_contractuelle_mois) || 4,
         date_debut: editForm.date_debut || null,
         date_fin_prevue: editForm.date_fin_prevue || null,
         mode_paiement: editForm.mode_paiement,
@@ -481,6 +487,24 @@ export default function ElevePanel({
       setSaveError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde')
       setSaving(false)
     }
+  }
+
+  async function addProf() {
+    if (!newProfNom.trim()) return
+    const res = await fetch('/api/profs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nom: newProfNom }),
+    })
+    const p = await res.json()
+    setProfs(prev => [...prev, p].sort((a, b) => a.nom.localeCompare(b.nom)))
+    setNewProfNom('')
+  }
+
+  async function deleteProf(id: string) {
+    await fetch(`/api/profs/${id}`, { method: 'DELETE' })
+    setProfs(prev => prev.filter(p => p.id !== id))
+    setConfirmDeleteProf(null)
   }
 
   function getFormuleLabel(id: string) {
@@ -530,6 +554,7 @@ export default function ElevePanel({
                     email: eleve.email ?? '',
                     telephone: eleve.telephone ?? '',
                     formule: eleve.formule,
+                    duree_contractuelle_mois: String(eleve.duree_contractuelle_mois ?? 4),
                     date_debut: eleve.date_debut?.slice(0, 10) ?? '',
                     date_fin_prevue: eleve.date_fin_prevue?.slice(0, 10) ?? '',
                     mode_paiement: eleve.mode_paiement,
@@ -674,6 +699,14 @@ export default function ElevePanel({
                 )}
               </div>
 
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Nb séances prévues</label>
+                <input type="number" min={1} value={String(parseInt(editForm.duree_contractuelle_mois || '4') * 2)}
+                  onChange={e => setEditForm(p => ({ ...p, duree_contractuelle_mois: String(Math.ceil(parseInt(e.target.value) / 2)) }))}
+                  style={{ width: '100%', padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>= {editForm.duree_contractuelle_mois || 4} mois × 2 séances/mois</div>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                 {[
                   { key: 'date_debut', label: 'Date de début' },
@@ -722,6 +755,49 @@ export default function ElevePanel({
                   <option value="">— Aucun —</option>
                   {profs.map(p => <option key={p.id} value={p.id}>{p.nom}</option>)}
                 </select>
+
+                <button type="button" onClick={() => setShowGererProfs(v => !v)}
+                  style={{ marginTop: 6, fontSize: 11, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                  {showGererProfs ? 'Masquer' : 'Gérer les profs'}
+                </button>
+
+                {showGererProfs && (
+                  <div style={{ marginTop: 8, padding: '10px 12px', background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                    {profs.map(p => (
+                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, color: 'var(--text)' }}>{p.nom}</span>
+                        {confirmDeleteProf === p.id ? (
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button onClick={() => deleteProf(p.id)}
+                              style={{ fontSize: 11, padding: '2px 8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+                              Confirmer
+                            </button>
+                            <button onClick={() => setConfirmDeleteProf(null)}
+                              style={{ fontSize: 11, padding: '2px 8px', background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}>
+                              Annuler
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmDeleteProf(p.id)}
+                            style={{ fontSize: 11, padding: '2px 6px', background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--muted)' }}>
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                      <input type="text" placeholder="Prénom du prof"
+                        value={newProfNom}
+                        onChange={e => setNewProfNom(e.target.value)}
+                        style={{ flex: 1, padding: '5px 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
+                      />
+                      <button onClick={addProf}
+                        style={{ padding: '5px 10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        +
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: 12 }}>
