@@ -17,10 +17,16 @@ export async function GET(req: NextRequest) {
         e.created_at,
         COUNT(s.id)::int                                     AS nb_seances_realisees,
         COALESCE(BOOL_OR(s.alerte_decrochage), false)        AS has_alerte,
-        ROUND(AVG(cre.satisfaction)::numeric, 1)             AS satisfaction_moyenne
+        (
+          SELECT cre2.satisfaction
+          FROM seances s2
+          JOIN compte_rendu_eleve cre2 ON cre2.seance_id = s2.id
+          WHERE s2.eleve_id = e.id AND cre2.satisfaction IS NOT NULL
+          ORDER BY s2.date DESC
+          LIMIT 1
+        )                                                    AS satisfaction_moyenne
       FROM eleves e
       LEFT JOIN seances s            ON s.eleve_id = e.id
-      LEFT JOIN compte_rendu_eleve cre ON cre.seance_id = s.id
       WHERE e.actif = $1
       GROUP BY e.id
       ORDER BY e.date_debut DESC`,
