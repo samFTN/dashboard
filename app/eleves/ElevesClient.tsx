@@ -45,17 +45,17 @@ function AvancementBar({ seances, mois }: { seances: number; mois: number }) {
   const total = mois * 2
   const pct = Math.min(100, Math.round((seances / total) * 100))
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{
-        flex: 1, height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden',
-      }}>
-        <div style={{
-          height: '100%', width: `${pct}%`,
-          background: pct >= 80 ? '#16a34a' : pct >= 40 ? 'var(--accent)' : 'var(--muted)',
-          borderRadius: 3, transition: 'width 0.3s',
-        }} />
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{
+            width: `${pct}%`,
+            background: pct >= 80 ? '#16a34a' : pct >= 40 ? 'var(--accent)' : 'var(--muted)',
+          }}
+        />
       </div>
-      <span style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+      <span className="text-[11px] whitespace-nowrap" style={{ color: 'var(--muted)' }}>
         {seances}/{total}
       </span>
     </div>
@@ -75,7 +75,6 @@ export default function ElevesClient({
   const [selected, setSelected] = useState<EleveRow | null>(null)
 
   const list = tab === 'actifs' ? actifs : anciens
-  const setList = tab === 'actifs' ? setActifs : setAnciens
 
   function handleEleveChanged(id: string, changes: Partial<EleveRow>) {
     const update = (prev: EleveRow[]) =>
@@ -86,113 +85,130 @@ export default function ElevesClient({
   }
 
   return (
-    <div style={{ padding: '32px 40px' }}>
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--dark)', margin: 0 }}>Élèves</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--muted)' }}>
-            {actifs.length} actif{actifs.length !== 1 ? 's' : ''} · {anciens.length} ancien{anciens.length !== 1 ? 's' : ''}
-          </p>
+      <div className="px-8 pt-8 pb-0">
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <h1 className="text-2xl font-black" style={{ color: 'var(--dark)', letterSpacing: '-0.5px' }}>
+              Élèves
+            </h1>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--muted2)' }}>
+              {actifs.length} actif{actifs.length !== 1 ? 's' : ''} · {anciens.length} ancien{anciens.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-3">
+          <div className="flex rounded-xl overflow-hidden" style={{ border: '1.5px solid var(--border)' }}>
+            {([
+              { label: 'Actifs', value: 'actifs' as const },
+              { label: 'Anciens', value: 'anciens' as const },
+            ]).map(({ label, value }) => (
+              <button
+                key={value}
+                onClick={() => setTab(value)}
+                className="px-4 py-1.5 text-sm font-medium transition-colors"
+                style={{
+                  background: tab === value ? 'var(--dark)' : 'transparent',
+                  color: tab === value ? 'white' : 'var(--muted2)',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
-        {(['actifs', 'anciens'] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              padding: '8px 16px', fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer',
-              background: 'none', borderBottom: tab === t ? '2px solid var(--accent)' : '2px solid transparent',
-              color: tab === t ? 'var(--accent)' : 'var(--muted)', marginBottom: -1,
-            }}
-          >
-            {t === 'actifs' ? 'Actifs' : 'Anciens'} ({t === 'actifs' ? actifs.length : anciens.length})
-          </button>
-        ))}
-      </div>
-
       {/* Table */}
-      <div style={{
-        background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)',
-        overflow: 'hidden',
-      }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: 'var(--border2)', borderBottom: '1px solid var(--border)' }}>
-              {['Nom', 'Formule', 'Avancement', 'Satisfaction', 'Points', 'Alerte'].map(h => (
-                <th key={h} style={{
-                  padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600,
-                  color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5,
-                }}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {list.length === 0 && (
-              <tr>
-                <td colSpan={6} style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
-                  Aucun élève
-                </td>
+      <div className="flex-1 overflow-auto px-8 py-5">
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{ border: '1px solid var(--border)', background: 'var(--card)' }}
+        >
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
+                {['Nom', 'Formule', 'Avancement', 'Satisfaction', 'Points', 'Alerte'].map(col => (
+                  <th
+                    key={col}
+                    className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider"
+                    style={{ color: 'var(--muted2)' }}
+                  >
+                    {col}
+                  </th>
+                ))}
               </tr>
-            )}
-            {list.map((e, i) => (
-              <tr
-                key={e.id}
-                onClick={() => setSelected(e)}
-                style={{
-                  borderBottom: i < list.length - 1 ? '1px solid var(--border2)' : 'none',
-                  cursor: 'pointer',
-                  background: selected?.id === e.id ? 'var(--accent-soft)' : 'transparent',
-                  transition: 'background 0.15s',
-                }}
-                onMouseEnter={ev => { if (selected?.id !== e.id) ev.currentTarget.style.background = 'var(--border2)' }}
-                onMouseLeave={ev => { if (selected?.id !== e.id) ev.currentTarget.style.background = 'transparent' }}
-              >
-                <td style={{ padding: '12px 16px', fontWeight: 500, color: 'var(--dark)' }}>
-                  <div>{e.nom}</div>
-                  {e.freeze_actif && (
-                    <span style={{
-                      fontSize: 10, fontWeight: 600, color: '#2563eb',
-                      background: '#eff6ff', padding: '1px 6px', borderRadius: 4,
-                    }}>
-                      FREEZE
-                    </span>
-                  )}
-                </td>
-                <td style={{ padding: '12px 16px', color: 'var(--text)' }}>
-                  {FORMULE_LABELS[e.formule] ?? e.formule}
-                </td>
-                <td style={{ padding: '12px 16px', minWidth: 140 }}>
-                  <AvancementBar seances={e.nb_seances_realisees} mois={e.duree_contractuelle_mois} />
-                </td>
-                <td style={{ padding: '12px 16px', color: satisfactionColor(e.satisfaction_moyenne), fontWeight: 600 }}>
-                  {e.satisfaction_moyenne ? `${e.satisfaction_moyenne}/5` : '—'}
-                </td>
-                <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--accent)' }}>
-                  {e.points_total ?? 0} pts
-                </td>
-                <td style={{ padding: '12px 16px' }}>
-                  {e.has_alerte ? (
-                    <span style={{
-                      fontSize: 11, fontWeight: 700, color: '#dc2626',
-                      background: '#fef2f2', padding: '3px 8px', borderRadius: 4,
-                      border: '1px solid #fecaca',
-                    }}>
-                      ⚠ Alerte
-                    </span>
-                  ) : (
-                    <span style={{ color: 'var(--muted)', fontSize: 12 }}>—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-16 text-center text-sm" style={{ color: 'var(--muted)' }}>
+                    Aucun élève
+                  </td>
+                </tr>
+              ) : (
+                list.map((e, i) => (
+                  <tr
+                    key={e.id}
+                    onClick={() => setSelected(e)}
+                    className="cursor-pointer transition-colors"
+                    style={{
+                      borderTop: i > 0 ? '1px solid var(--border2)' : undefined,
+                      background: selected?.id === e.id ? 'var(--accent-soft)' : undefined,
+                    }}
+                    onMouseEnter={ev => {
+                      if (selected?.id !== e.id)
+                        ev.currentTarget.style.background = 'var(--bg)'
+                    }}
+                    onMouseLeave={ev => {
+                      if (selected?.id !== e.id)
+                        ev.currentTarget.style.background = ''
+                    }}
+                  >
+                    <td className="px-4 py-3">
+                      <p className="font-semibold" style={{ color: 'var(--dark)' }}>{e.nom}</p>
+                      {e.freeze_actif && (
+                        <span
+                          className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold mt-0.5"
+                          style={{ background: '#eff6ff', color: '#2563eb' }}
+                        >
+                          FREEZE
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
+                      {FORMULE_LABELS[e.formule] ?? e.formule}
+                    </td>
+                    <td className="px-4 py-3" style={{ minWidth: 140 }}>
+                      <AvancementBar seances={e.nb_seances_realisees} mois={e.duree_contractuelle_mois} />
+                    </td>
+                    <td className="px-4 py-3 text-sm font-semibold" style={{ color: satisfactionColor(e.satisfaction_moyenne) }}>
+                      {e.satisfaction_moyenne ? `${e.satisfaction_moyenne}/5` : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+                      {e.points_total ?? 0} pts
+                    </td>
+                    <td className="px-4 py-3">
+                      {e.has_alerte ? (
+                        <span
+                          className="inline-flex px-2 py-0.5 rounded text-[11px] font-bold"
+                          style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}
+                        >
+                          ⚠ Alerte
+                        </span>
+                      ) : (
+                        <span className="text-xs" style={{ color: 'var(--muted)' }}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Panel */}
