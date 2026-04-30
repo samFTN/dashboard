@@ -556,8 +556,8 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
         {/* Footer actions */}
         <div className="px-6 py-4 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
 
-          {/* Convertir en élève (uniquement si statut = present) */}
-          {currentLead.statut === 'present' && (
+          {/* Convertir en élève (tous statuts actifs) */}
+          {['nouveau', 'qualifie', 'reserve', 'present'].includes(currentLead.statut) && (
             <button
               onClick={() => setShowConvertModal(true)}
               disabled={saving}
