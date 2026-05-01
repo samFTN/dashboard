@@ -216,6 +216,17 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
     }
   }
 
+  async function handleDeleteAction(actionId: string) {
+    try {
+      await fetch(`/api/leads/${currentLead.id}/actions/${actionId}`, { method: 'DELETE' })
+      const updatedJournal = currentLead.journal.filter(a => a.id !== actionId)
+      setCurrentLead(prev => ({ ...prev, journal: updatedJournal }))
+      onLeadChanged({ journal: updatedJournal })
+    } catch {
+      setError('Erreur lors de la suppression')
+    }
+  }
+
   const inputStyle = {
     border: '1.5px solid var(--border)',
     borderRadius: 8,
@@ -497,6 +508,14 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                         </p>
                       )}
                     </div>
+                    <button
+                      onClick={() => handleDeleteAction(action.id)}
+                      className="shrink-0 text-xs opacity-40 hover:opacity-100 transition-opacity"
+                      style={{ color: '#dc2626' }}
+                      title="Supprimer"
+                    >
+                      ✕
+                    </button>
                   </div>
                 ))
               )}
@@ -525,7 +544,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                   </select>
                   <input
                     type="datetime-local"
-                    value={actionForm.date + 'T00:00'}
+                    value={actionForm.date.includes('T') ? actionForm.date.slice(0, 16) : actionForm.date + 'T00:00'}
                     onChange={e => setActionForm(p => ({ ...p, date: e.target.value }))}
                     style={inputStyle}
                   />
