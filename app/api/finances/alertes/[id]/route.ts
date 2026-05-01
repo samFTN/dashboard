@@ -50,7 +50,9 @@ export async function PATCH(
         if (alerteRows.length === 0) throw new Error('Alerte introuvable')
         const alerte = alerteRows[0]
 
-        // Trouve la plus ancienne échéance non-encaissée de l'élève avec le bon montant
+        const today = new Date().toISOString().slice(0, 10)
+
+        // Cherche d'abord une échéance non-encaissée avec le bon montant
         const { rows: echeanceRows } = await client.query(
           `SELECT id FROM echeances
            WHERE eleve_id = $1 AND encaisse = false
@@ -60,15 +62,35 @@ export async function PATCH(
           [eleve_id, alerte.montant]
         )
 
-        if (echeanceRows.length === 0) throw new Error('Aucune échéance correspondante trouvée')
-        const echeanceId = echeanceRows[0].id
+        let echeanceId: string
 
-        // Marque l'échéance encaissée
-        const today = new Date().toISOString().slice(0, 10)
-        await client.query(
-          `UPDATE echeances SET encaisse = true, date_encaissement = $2 WHERE id = $1`,
-          [echeanceId, today]
-        )
+        if (echeanceRows.length > 0) {
+          // Échéance existante — on la marque encaissée
+          echeanceId = echeanceRows[0].id
+          await client.query(
+            `UPDATE echeances SET encaisse = true, date_encaissement = $2 WHERE id = $1`,
+            [echeanceId, today]
+          )
+        } else {
+          // Aucune échéance au bon montant (plan de paiement personnalisé, etc.)
+          // On crée une nouvelle échéance ad-hoc rattachée à l'inscription de l'élève
+          const { rows: inscRows } = await client.query(
+            `SELECT id FROM inscriptions_financieres
+             WHERE eleve_id = $1
+             ORDER BY date_inscription ASC
+             LIMIT 1`,
+            [eleve_id]
+          )
+          if (inscRows.length === 0) throw new Error('Aucune inscription trouvée pour cet élève')
+
+          const { rows: newEch } = await client.query(
+            `INSERT INTO echeances (inscription_id, eleve_id, date_prelevement, montant, encaisse, date_encaissement)
+             VALUES ($1, $2, $3, $4, true, $3)
+             RETURNING id`,
+            [inscRows[0].id, eleve_id, today, alerte.montant]
+          )
+          echeanceId = newEch[0].id
+        }
 
         // Sauvegarde l'email Stripe sur l'élève pour les prochains matchings
         await client.query(

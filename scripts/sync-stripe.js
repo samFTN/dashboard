@@ -62,7 +62,7 @@ async function fetchAllPaymentIntents(since) {
 
   while (true) {
     page++
-    let url = `/v1/payment_intents?limit=100&created[gte]=${since}&expand[]=data.latest_charge`
+    let url = `/v1/payment_intents?limit=100&created[gte]=${since}&expand[]=data.latest_charge&expand[]=data.customer`
     if (startingAfter) url += `&starting_after=${startingAfter}`
 
     process.stdout.write(`  Page ${page}…`)
@@ -126,13 +126,21 @@ async function processPaymentIntent(pi) {
   const stripePaymentId = pi.id
 
   const charge = pi.latest_charge
+  const customer = pi.customer // objet customer expandé (ou null)
+
   const stripeEmail = (
     pi.receipt_email ||
     charge?.billing_details?.email ||
+    customer?.email ||
     ''
   ).toLowerCase().trim()
 
-  const stripeNom = (charge?.billing_details?.name || '').trim()
+  const stripeNom = (
+    charge?.billing_details?.name ||
+    customer?.name ||
+    ''
+  ).trim()
+
   const montant = typeof pi.amount === 'number' ? pi.amount / 100 : 0
 
   if (!stripeEmail && !stripeNom) {
