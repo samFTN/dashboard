@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
   const questionnaire = {
     anciennete: extractByLabelContains(fields, 'commencé la guitare') ?? undefined,
     essais_passes: extractByLabelContains(fields, 'déjà essayé') ?? undefined,
-    adhesion_programme: extractByLabelContains(fields, 'ligne directrice') ?? undefined,
+    adhesion_programme: extractByLabelContains(fields, 'te parle') ?? undefined,
     attentes_cours: extractByLabelContains(fields, "cours d'essai en visio") ?? undefined,
     delai_demarrage: extractByLabelContains(fields, 'quel délai') ?? undefined,
   } as Record<string, string | undefined>
