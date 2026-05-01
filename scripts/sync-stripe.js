@@ -86,7 +86,7 @@ async function fetchAllPaymentIntents(since) {
 
 // ─── Logique matching (miroir du webhook) ───────────────────────────────────
 
-async function encaisserEcheance(client, eleveId, montant, stripeEmail) {
+async function encaisserEcheance(client, eleveId, montant, stripeEmail, stripeNom, stripePaymentId) {
   const today = new Date().toISOString().slice(0, 10)
 
   const { rows } = await client.query(
@@ -109,6 +109,14 @@ async function encaisserEcheance(client, eleveId, montant, stripeEmail) {
       [eleveId, stripeEmail]
     )
   }
+
+  // Enregistre l'encaissement dans alertes_paiement (statut=assigne) pour déduplication future
+  await client.query(
+    `INSERT INTO alertes_paiement (stripe_email, stripe_nom, montant, stripe_payment_id, statut, eleve_id, echeance_id)
+     VALUES ($1, $2, $3, $4, 'assigne', $5, $6)
+     ON CONFLICT (stripe_payment_id) DO NOTHING`,
+    [stripeEmail || '', stripeNom || '', montant, stripePaymentId, eleveId, rows[0].id]
+  )
 
   return { ok: true, echeanceId: rows[0].id }
 }
@@ -173,7 +181,7 @@ async function processPaymentIntent(pi) {
         [stripeEmail]
       )
       if (rows.length > 0) {
-        const result = await encaisserEcheance(client, rows[0].id, montant, stripeEmail)
+        const result = await encaisserEcheance(client, rows[0].id, montant, stripeEmail, stripeNom, stripePaymentId)
         await client.query('COMMIT')
         if (result.ok) return { status: 'encaisse', method: 'email', stripeEmail, montant }
         // Élève trouvé mais pas d'échéance correspondante
@@ -193,7 +201,7 @@ async function processPaymentIntent(pi) {
       const matches = eleves.filter(e => normalizeName(e.nom) === nomNorm)
 
       if (matches.length === 1) {
-        const result = await encaisserEcheance(client, matches[0].id, montant, stripeEmail)
+        const result = await encaisserEcheance(client, matches[0].id, montant, stripeEmail, stripeNom, stripePaymentId)
         await client.query('COMMIT')
         if (result.ok) return { status: 'encaisse', method: 'nom', stripeNom, montant }
         await creerAlerte(client, stripeEmail, stripeNom, montant, stripePaymentId, {
