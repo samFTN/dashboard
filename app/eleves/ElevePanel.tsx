@@ -390,6 +390,9 @@ export default function ElevePanel({
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [ancienLoading, setAncienLoading] = useState(false)
+  const [noteText, setNoteText] = useState(eleve.notes ?? '')
+  const [noteSaving, setNoteSaving] = useState(false)
+  const [noteSaved, setNoteSaved] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -490,6 +493,23 @@ export default function ElevePanel({
     await fetch(`/api/formules/${id}`, { method: 'DELETE' })
     setFormules(prev => prev.filter(f => f.id !== id))
     setConfirmDeleteFormule(null)
+  }
+
+  async function saveNote(value: string) {
+    if (value === (eleve.notes ?? '')) return
+    setNoteSaving(true)
+    try {
+      await fetch(`/api/eleves/${eleve.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: value }),
+      })
+      onChanged({ notes: value })
+      setNoteSaved(true)
+      setTimeout(() => setNoteSaved(false), 2000)
+    } finally {
+      setNoteSaving(false)
+    }
   }
 
   async function marquerAncien() {
@@ -942,19 +962,34 @@ export default function ElevePanel({
                 </div>
               )}
 
-              {eleve.notes && (
-                <div style={{
-                  background: 'var(--border2)', border: '1px solid var(--border)',
-                  borderRadius: 8, padding: '10px 14px', marginBottom: 24,
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                     Notes internes
-                  </div>
-                  <p style={{ margin: 0, fontSize: 13, color: 'var(--dark)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                    {eleve.notes}
-                  </p>
+                  </span>
+                  <span style={{ fontSize: 11, color: noteSaved ? '#16a34a' : 'transparent', transition: 'color 0.2s' }}>
+                    Enregistré ✓
+                  </span>
                 </div>
-              )}
+                <textarea
+                  value={noteText}
+                  onChange={e => setNoteText(e.target.value)}
+                  onBlur={e => saveNote(e.target.value)}
+                  placeholder="Ajouter une note interne..."
+                  rows={3}
+                  disabled={noteSaving}
+                  style={{
+                    width: '100%', padding: '8px 10px',
+                    border: '1.5px solid var(--border)', borderRadius: 7,
+                    fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit',
+                    resize: 'vertical', background: 'var(--border2)',
+                    color: 'var(--dark)', lineHeight: 1.5,
+                    outline: 'none', transition: 'border-color 0.15s',
+                  }}
+                  onFocus={e => { e.target.style.borderColor = 'var(--accent)' }}
+                  onBlurCapture={e => { e.target.style.borderColor = 'var(--border)' }}
+                />
+              </div>
 
               <Section title="Programme">
                 <Row label="Formule" value={getFormuleLabel(eleve.formule)} />
