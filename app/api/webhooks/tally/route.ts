@@ -136,19 +136,6 @@ export async function POST(req: NextRequest) {
     delai_demarrage: extractByLabelContains(fields, 'quel délai') ?? undefined,
   } as Record<string, string | undefined>
 
-  // Check for duplicate (silent on match — Tally retries on non-2xx)
-  const { rows: dups } = await pool.query(
-    `SELECT id FROM leads
-     WHERE (email = $1 OR ($2::text IS NOT NULL AND telephone = $2))
-       AND archive = false
-     LIMIT 1`,
-    [email, telephone || null]
-  )
-  if (dups.length > 0) {
-    console.log('[webhooks/tally] Doublon ignoré:', email)
-    return NextResponse.json({ ok: true })
-  }
-
   // Determine qualification
   const disqualRaison = detectDisqualification(questionnaire)
   const isQualifie = disqualRaison === null
@@ -157,23 +144,62 @@ export async function POST(req: NextRequest) {
     questionnaire.disqualification_raison = disqualRaison!
   }
 
-  // Insert lead
+  // Check for existing lead (including archived — we update instead of ignore)
+  const { rows: dups } = await pool.query(
+    `SELECT id, archive, raison_archivage, statut FROM leads
+     WHERE (email = $1 OR ($2::text IS NOT NULL AND telephone = $2))
+     ORDER BY created_at DESC LIMIT 1`,
+    [email, telephone || null]
+  )
+
   try {
-    if (isQualifie) {
-      await pool.query(
-        `INSERT INTO leads (nom, email, telephone, source, objectifs, problemes, statut, questionnaire)
-         VALUES ($1, $2, $3, 'pub_meta', $4, $5, 'qualifie', $6)`,
-        [nom, email, telephone || null, objectifs || null, problemes || null, questionnaire]
-      )
+    if (dups.length > 0) {
+      const existing = dups[0]
+      const wasNonQualifie = existing.raison_archivage === 'non_qualifie'
+
+      if (wasNonQualifie && isQualifie) {
+        // Was disqualified, now qualifies → reactivate
+        await pool.query(
+          `UPDATE leads SET
+             questionnaire = $2, objectifs = $3, problemes = $4,
+             telephone = COALESCE($5, telephone),
+             statut = 'qualifie', archive = false,
+             raison_archivage = null, date_archivage = null,
+             updated_at = NOW()
+           WHERE id = $1`,
+          [existing.id, questionnaire, objectifs || null, problemes || null, telephone || null]
+        )
+        console.log('[webhooks/tally] Lead réactivé (non_qualifie → qualifié):', email)
+      } else {
+        // Already active or still disqualified → update questionnaire data only
+        await pool.query(
+          `UPDATE leads SET
+             questionnaire = $2, objectifs = $3, problemes = $4,
+             telephone = COALESCE($5, telephone),
+             updated_at = NOW()
+           WHERE id = $1`,
+          [existing.id, questionnaire, objectifs || null, problemes || null, telephone || null]
+        )
+        console.log('[webhooks/tally] Lead mis à jour (re-soumission):', email)
+      }
     } else {
-      await pool.query(
-        `INSERT INTO leads (nom, email, telephone, source, objectifs, problemes, statut, questionnaire,
-           archive, raison_archivage, date_archivage)
-         VALUES ($1, $2, $3, 'pub_meta', $4, $5, 'nouveau', $6, true, 'non_qualifie', NOW())`,
-        [nom, email, telephone || null, objectifs || null, problemes || null, questionnaire]
-      )
+      // New lead
+      if (isQualifie) {
+        await pool.query(
+          `INSERT INTO leads (nom, email, telephone, source, objectifs, problemes, statut, questionnaire)
+           VALUES ($1, $2, $3, 'pub_meta', $4, $5, 'qualifie', $6)`,
+          [nom, email, telephone || null, objectifs || null, problemes || null, questionnaire]
+        )
+      } else {
+        await pool.query(
+          `INSERT INTO leads (nom, email, telephone, source, objectifs, problemes, statut, questionnaire,
+             archive, raison_archivage, date_archivage)
+           VALUES ($1, $2, $3, 'pub_meta', $4, $5, 'nouveau', $6, true, 'non_qualifie', NOW())`,
+          [nom, email, telephone || null, objectifs || null, problemes || null, questionnaire]
+        )
+      }
+      console.log('[webhooks/tally] Lead créé:', email, isQualifie ? 'qualifié' : 'non qualifié')
     }
-    console.log('[webhooks/tally] Lead créé:', email, isQualifie ? 'qualifié' : 'non qualifié')
   } catch (err) {
     console.error('[webhooks/tally] Erreur DB:', err)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
