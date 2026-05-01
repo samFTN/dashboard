@@ -60,13 +60,14 @@ function extractByType(fields: TallyField[], type: string): string | null {
 }
 
 function detectDisqualification(q: Record<string, string | undefined>): string | null {
+  const reasons: string[] = []
   for (const [answer, key, label] of DISQUALIFIERS) {
     const val = q[key]
     if (val && val.toLowerCase().trim() === answer.toLowerCase()) {
-      return `${label} : ${val}`
+      reasons.push(`${label} : ${val}`)
     }
   }
-  return null
+  return reasons.length > 0 ? reasons.join(' | ') : null
 }
 
 function validateSignature(rawBody: string, received: string, secret: string): boolean {
