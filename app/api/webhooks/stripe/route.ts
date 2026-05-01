@@ -72,6 +72,9 @@ export async function POST(req: NextRequest) {
 
   const montant = typeof pi.amount === 'number' ? pi.amount / 100 : 0
   const stripePaymentId = pi.id as string
+  const paymentDate = typeof pi.created === 'number'
+    ? new Date(pi.created * 1000).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10)
 
   if (!stripeEmail && !stripeNom) {
     console.warn('[webhooks/stripe] Aucun email ni nom dans le payment_intent', stripePaymentId)
@@ -98,7 +101,7 @@ export async function POST(req: NextRequest) {
         [stripeEmail]
       )
       if (rows.length > 0) {
-        await encaisserEcheance(rows[0].id, montant, stripeEmail, null)
+        await encaisserEcheance(rows[0].id, montant, stripeEmail, null, paymentDate)
         console.log('[webhooks/stripe] Encaissé par email:', stripeEmail, montant)
         return NextResponse.json({ ok: true })
       }
@@ -116,7 +119,7 @@ export async function POST(req: NextRequest) {
       )
 
       if (matches.length === 1) {
-        await encaisserEcheance(matches[0].id, montant, stripeEmail, stripeNom)
+        await encaisserEcheance(matches[0].id, montant, stripeEmail, stripeNom, paymentDate)
         console.log('[webhooks/stripe] Encaissé par nom:', stripeNom, montant)
         return NextResponse.json({ ok: true })
       }
@@ -146,13 +149,14 @@ async function encaisserEcheance(
   eleveId: string,
   montant: number,
   stripeEmail: string,
-  stripeNom: string | null
+  stripeNom: string | null,
+  paymentDate: string
 ) {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
 
-    const today = new Date().toISOString().slice(0, 10)
+    const today = paymentDate
 
     // Plus ancienne échéance non-encaissée avec le bon montant
     const { rows } = await client.query(

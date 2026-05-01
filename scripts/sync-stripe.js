@@ -86,8 +86,8 @@ async function fetchAllPaymentIntents(since) {
 
 // ─── Logique matching (miroir du webhook) ───────────────────────────────────
 
-async function encaisserEcheance(client, eleveId, montant, stripeEmail, stripeNom, stripePaymentId) {
-  const today = new Date().toISOString().slice(0, 10)
+async function encaisserEcheance(client, eleveId, montant, stripeEmail, stripeNom, stripePaymentId, paymentDate) {
+  const today = paymentDate || new Date().toISOString().slice(0, 10)
 
   const { rows } = await client.query(
     `SELECT id FROM echeances
@@ -150,6 +150,9 @@ async function processPaymentIntent(pi) {
   ).trim()
 
   const montant = typeof pi.amount === 'number' ? pi.amount / 100 : 0
+  const paymentDate = typeof pi.created === 'number'
+    ? new Date(pi.created * 1000).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10)
 
   if (!stripeEmail && !stripeNom) {
     return { status: 'skip', reason: 'pas_email_ni_nom' }
@@ -181,7 +184,7 @@ async function processPaymentIntent(pi) {
         [stripeEmail]
       )
       if (rows.length > 0) {
-        const result = await encaisserEcheance(client, rows[0].id, montant, stripeEmail, stripeNom, stripePaymentId)
+        const result = await encaisserEcheance(client, rows[0].id, montant, stripeEmail, stripeNom, stripePaymentId, paymentDate)
         await client.query('COMMIT')
         if (result.ok) return { status: 'encaisse', method: 'email', stripeEmail, montant }
         // Élève trouvé mais pas d'échéance correspondante
@@ -201,7 +204,7 @@ async function processPaymentIntent(pi) {
       const matches = eleves.filter(e => normalizeName(e.nom) === nomNorm)
 
       if (matches.length === 1) {
-        const result = await encaisserEcheance(client, matches[0].id, montant, stripeEmail, stripeNom, stripePaymentId)
+        const result = await encaisserEcheance(client, matches[0].id, montant, stripeEmail, stripeNom, stripePaymentId, paymentDate)
         await client.query('COMMIT')
         if (result.ok) return { status: 'encaisse', method: 'nom', stripeNom, montant }
         await creerAlerte(client, stripeEmail, stripeNom, montant, stripePaymentId, {
