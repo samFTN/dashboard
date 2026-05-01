@@ -135,6 +135,30 @@ export default function ElevesClient({
         </div>
       </div>
 
+      {/* Bandeau actions */}
+      {tab === 'actifs' && (() => {
+        const alerteCount = actifs.filter(e => e.has_alerte).length
+        const freezeCount = actifs.filter(e => e.freeze_actif).length
+        if (alerteCount === 0 && freezeCount === 0) return null
+        return (
+          <div className="px-4 md:px-8 pt-3">
+            <div className="flex items-center gap-2 flex-wrap rounded-xl px-4 py-2.5" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>À faire</span>
+              {alerteCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                  ⚠ {alerteCount} élève{alerteCount > 1 ? 's' : ''} — CR manquant
+                </span>
+              )}
+              {freezeCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+                  ⏸ {freezeCount} élève{freezeCount > 1 ? 's' : ''} en freeze
+                </span>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Table */}
       <div className="flex-1 overflow-auto px-4 md:px-8 py-4 md:py-5">
         <div

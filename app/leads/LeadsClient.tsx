@@ -314,6 +314,22 @@ export default function LeadsClient({ initialLeads }: { initialLeads: LeadRow[] 
     outline: 'none',
   }
 
+  const today = new Date().toISOString().slice(0, 10)
+  const actionItems = !showArchived ? (() => {
+    const aRelancer = leads.filter(l =>
+      l.prochaine_action_date && l.prochaine_action_date.slice(0, 10) < today
+    ).length
+    const coursAujourdhui = leads.filter(l =>
+      l.prochaine_action_type === 'cours_essai' &&
+      l.prochaine_action_date?.slice(0, 10) === today
+    ).length
+    const sansPlan = leads.filter(l =>
+      !l.prochaine_action_date &&
+      ['qualifie', 'reserve', 'present'].includes(l.statut)
+    ).length
+    return { aRelancer, coursAujourdhui, sansPlan }
+  })() : null
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -372,6 +388,30 @@ export default function LeadsClient({ initialLeads }: { initialLeads: LeadRow[] 
           {loading && <span className="text-xs" style={{ color: 'var(--muted)' }}>Chargement…</span>}
         </div>
       </div>
+
+      {/* Bandeau actions */}
+      {actionItems && (actionItems.aRelancer > 0 || actionItems.coursAujourdhui > 0 || actionItems.sansPlan > 0) && (
+        <div className="px-4 md:px-8 pt-3">
+          <div className="flex items-center gap-2 flex-wrap rounded-xl px-4 py-2.5" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>À faire</span>
+            {actionItems.aRelancer > 0 && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>
+                ⏰ {actionItems.aRelancer} lead{actionItems.aRelancer > 1 ? 's' : ''} à relancer
+              </span>
+            )}
+            {actionItems.coursAujourdhui > 0 && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' }}>
+                🎸 {actionItems.coursAujourdhui} cours d&apos;essai aujourd&apos;hui
+              </span>
+            )}
+            {actionItems.sansPlan > 0 && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{ background: '#f3f4f6', color: '#4b5563', border: '1px solid #e5e7eb' }}>
+                📋 {actionItems.sansPlan} sans action planifiée
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="flex-1 overflow-auto px-4 md:px-8 py-4 md:py-5">
