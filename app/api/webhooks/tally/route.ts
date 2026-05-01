@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import pool from '@/lib/db'
 
+interface TallyOption { id: string; text: string }
+
 interface TallyField {
   key: string
   label: string
   type: string
   value: unknown
+  options?: TallyOption[]
 }
 
 interface TallyPayload {
@@ -18,39 +21,42 @@ interface TallyPayload {
 const DISQUALIFIERS: [string, string, string][] = [
   ["Je n'ai pas encore commencé", 'anciennete', 'Ancienneté guitare'],
   ['Moins de 3 mois', 'anciennete', 'Ancienneté guitare'],
-  ['Non, je veux seulement des cours à l\'heure', 'adhesion_programme', 'Programme Guitarisation'],
+  ["Non, je veux seulement des cours à l'heure", 'adhesion_programme', 'Programme Guitarisation'],
   ['Je viens pour avoir quelques conseils pour progresser de mon côté', 'attentes_cours', "Attentes cours d'essai"],
-  ['Ce n\'est pas le bon moment pour moi', 'delai_demarrage', 'Délai démarrage'],
+  ["Ce n'est pas le bon moment pour moi", 'delai_demarrage', 'Délai démarrage'],
 ]
 
-function extractValue(v: unknown): string | null {
+// Tally sends UUIDs for MULTIPLE_CHOICE — resolve them to text via the options array
+function resolveValue(field: TallyField): string | null {
+  const v = field.value
   if (v == null) return null
-  if (typeof v === 'string') return v.trim() || null
-  if (Array.isArray(v)) {
-    const parts = v.map(i => extractValue(i)).filter(Boolean)
-    return parts.length > 0 ? parts.join(', ') : null
+
+  if (field.options && field.options.length > 0) {
+    // value is an array of selected option IDs
+    const ids = Array.isArray(v) ? v : [v]
+    const texts = ids
+      .map(id => field.options!.find(o => o.id === id)?.text)
+      .filter((t): t is string => !!t)
+    return texts.length > 0 ? texts.join(', ') : null
   }
-  if (typeof v === 'object') {
-    const obj = v as Record<string, unknown>
-    const text = obj.text ?? obj.label ?? obj.value
-    return text != null ? String(text).trim() || null : null
-  }
-  return String(v).trim() || null
+
+  // Plain text field
+  return typeof v === 'string' ? v.trim() || null : String(v).trim() || null
 }
 
 function extractByLabel(fields: TallyField[], label: string): string | null {
   const f = fields.find(f => f.label.toLowerCase().trim() === label.toLowerCase().trim())
-  return f ? extractValue(f.value) : null
+  return f ? resolveValue(f) : null
 }
 
 function extractByLabelContains(fields: TallyField[], fragment: string): string | null {
   const f = fields.find(f => f.label.toLowerCase().includes(fragment.toLowerCase()))
-  return f ? extractValue(f.value) : null
+  return f ? resolveValue(f) : null
 }
 
 function extractByType(fields: TallyField[], type: string): string | null {
   const f = fields.find(f => f.type === type)
-  return f ? extractValue(f.value) : null
+  return f ? resolveValue(f) : null
 }
 
 function detectDisqualification(q: Record<string, string | undefined>): string | null {
@@ -104,7 +110,6 @@ export async function POST(req: NextRequest) {
   }
 
   const fields = payload.data?.fields ?? []
-  console.log('[webhooks/tally] Fields bruts:', JSON.stringify(fields))
 
   // Build nom (Prénom + Nom de famille)
   const prenom = extractByLabel(fields, 'Prénom') ?? ''
