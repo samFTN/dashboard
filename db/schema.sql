@@ -109,7 +109,10 @@ CREATE TABLE IF NOT EXISTS eleves (
 
   -- Statut
   actif                    BOOLEAN NOT NULL DEFAULT TRUE,
-  date_fin_reelle          DATE
+  date_fin_reelle          DATE,
+
+  -- Paiement Stripe (email utilisé sur Podia/Stripe, peut différer de email)
+  email_paiement           TEXT
 );
 
 -- FK circulaire leads → eleves (ajoutée après création de eleves)
@@ -223,6 +226,23 @@ CREATE TABLE IF NOT EXISTS charges_meta_ads (
 );
 
 -- ------------------------------------------------------------
+-- ALERTES PAIEMENT (paiements Stripe non reconnus automatiquement)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS alertes_paiement (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  stripe_email      TEXT NOT NULL,
+  stripe_nom        TEXT,
+  montant           NUMERIC(8,2) NOT NULL,
+  stripe_payment_id TEXT NOT NULL UNIQUE,
+  statut            TEXT NOT NULL DEFAULT 'non_assigne'
+                    CHECK (statut IN ('non_assigne','assigne','ignore')),
+  eleve_id          UUID REFERENCES eleves(id),
+  echeance_id       UUID REFERENCES echeances(id),
+  meta              JSONB
+);
+
+-- ------------------------------------------------------------
 -- KPIs MENSUELS (précalculés par le cron nocturne)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS kpis_mensuels (
@@ -281,3 +301,7 @@ CREATE INDEX IF NOT EXISTS idx_seances_alerte ON seances(alerte_decrochage) WHER
 CREATE INDEX IF NOT EXISTS idx_echeances_eleve_id        ON echeances(eleve_id);
 CREATE INDEX IF NOT EXISTS idx_echeances_date_prelevement ON echeances(date_prelevement);
 CREATE INDEX IF NOT EXISTS idx_echeances_encaisse        ON echeances(encaisse);
+
+-- Alertes paiement
+CREATE INDEX IF NOT EXISTS idx_alertes_paiement_statut ON alertes_paiement(statut);
+CREATE INDEX IF NOT EXISTS idx_alertes_paiement_stripe_payment_id ON alertes_paiement(stripe_payment_id);
