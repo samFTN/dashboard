@@ -54,7 +54,17 @@ export async function GET(
             'semaines_duree', f.semaines_duree
           ) ORDER BY f.date_debut), '[]'::json)
           FROM freezes f WHERE f.eleve_id = e.id
-        ) AS freezes
+        ) AS freezes,
+        (
+          SELECT COALESCE(json_agg(json_build_object(
+            'id',              ec.id::text,
+            'date_prelevement',ec.date_prelevement,
+            'montant',         ec.montant,
+            'encaisse',        ec.encaisse,
+            'date_encaissement',ec.date_encaissement
+          ) ORDER BY ec.date_prelevement ASC), '[]'::json)
+          FROM echeances ec WHERE ec.eleve_id = e.id
+        ) AS echeances
       FROM eleves e
       LEFT JOIN seances s             ON s.eleve_id = e.id
       LEFT JOIN compte_rendu_prof crp ON crp.seance_id = s.id

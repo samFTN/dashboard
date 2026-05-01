@@ -37,9 +37,18 @@ type Freeze = {
   semaines_duree: number | null
 }
 
+type Echeance = {
+  id: string
+  date_prelevement: string
+  montant: number
+  encaisse: boolean
+  date_encaissement: string | null
+}
+
 type EleveDetail = EleveRow & {
   seances: Seance[]
   freezes: Freeze[]
+  echeances: Echeance[]
 }
 
 function fmt(iso: string | null) {
@@ -1096,6 +1105,63 @@ export default function ElevePanel({
               </div>
             )}
           </Section>
+
+          {/* Paiements */}
+          {detail && detail.echeances.length > 0 && (
+            <Section title="Paiements">
+              {(() => {
+                const total = detail.echeances.reduce((s, e) => s + Number(e.montant), 0)
+                const encaisse = detail.echeances.filter(e => e.encaisse).reduce((s, e) => s + Number(e.montant), 0)
+                const resteAEncaisser = total - encaisse
+                return (
+                  <>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                      <div style={{ flex: 1, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 7, padding: '8px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#16a34a' }}>{encaisse.toFixed(2)} €</div>
+                        <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>encaissé</div>
+                      </div>
+                      {resteAEncaisser > 0 && (
+                        <div style={{ flex: 1, background: 'var(--border2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--dark)' }}>{resteAEncaisser.toFixed(2)} €</div>
+                          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>à venir</div>
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+                      {detail.echeances.map((ec, i) => (
+                        <div key={ec.id} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                          background: ec.encaisse ? 'var(--card)' : 'var(--border2)',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{
+                              width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                              background: ec.encaisse ? '#16a34a' : 'var(--border)',
+                              border: ec.encaisse ? 'none' : '1.5px solid #9ca3af',
+                              display: 'inline-block',
+                            }} />
+                            <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                              {ec.encaisse && ec.date_encaissement
+                                ? fmt(ec.date_encaissement)
+                                : fmt(ec.date_prelevement)}
+                            </span>
+                            {!ec.encaisse && (
+                              <span style={{ fontSize: 10, color: '#9ca3af' }}>prévu</span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: ec.encaisse ? 'var(--dark)' : 'var(--muted)' }}>
+                            {Number(ec.montant).toFixed(2)} €
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )
+              })()}
+            </Section>
+          )}
 
           {/* Séances */}
           <Section title={`Séances (${detail?.seances.length ?? '…'})`}>
