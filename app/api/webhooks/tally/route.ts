@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
   }
 
   const fields = payload.data?.fields ?? []
+  console.log('[webhooks/tally] Fields bruts:', JSON.stringify(fields))
 
   // Build nom (Prénom + Nom de famille)
   const prenom = extractByLabel(fields, 'Prénom') ?? ''
