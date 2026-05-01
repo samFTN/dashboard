@@ -14,11 +14,11 @@ Claude Code lira le contexte et saura exactement où il en est.
 Lis attentivement CONTEXTE.md et types/index.ts avant de faire quoi que ce soit.
 
 Tu construis le dashboard de gestion de Guitarisation™, une école de guitare en ligne française.
-Stack : Next.js (App Router) + PostgreSQL sur Railway. Pas de Vercel, pas de Supabase, pas de Make.
+Stack : Next.js (App Router) + PostgreSQL sur Railway. 
 
 Principes non négociables :
 - Un seul outil d'hébergement : Railway (app + base de données + cron jobs)
-- Interface sobre : vue liste épurée, panneau détail au clic
+- Interface sobre : vue liste épurée, panneau détail au clic (suis le DESIGN_SYSTEM.md)
 - Calculs automatiques partout où c'est possible
 - On construit module par module, MVP d'abord
 
