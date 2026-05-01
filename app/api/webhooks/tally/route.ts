@@ -64,7 +64,7 @@ function detectDisqualification(q: Record<string, string | undefined>): string |
 }
 
 function validateSignature(rawBody: string, received: string, secret: string): boolean {
-  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex')
+  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('base64')
   try {
     const expBuf = Buffer.from(expected)
     const recBuf = Buffer.from(received)
@@ -84,14 +84,8 @@ export async function POST(req: NextRequest) {
 
   const rawBody = await req.text()
 
-  // Debug: log all headers to find the correct signature header name
-  const allHeaders: Record<string, string> = {}
-  req.headers.forEach((value, key) => { allHeaders[key] = value })
-  console.log('[webhooks/tally] Headers reçus:', JSON.stringify(allHeaders))
-
-  // Validate signature — Tally sends it in the 'tally-signature' header
+  // Validate signature — Tally sends HMAC-SHA256 as Base64 in 'tally-signature'
   const receivedSig = req.headers.get('tally-signature') ?? ''
-  console.log('[webhooks/tally] Signature reçue:', receivedSig)
   if (!validateSignature(rawBody, receivedSig, secret)) {
     console.warn('[webhooks/tally] Signature invalide')
     return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
