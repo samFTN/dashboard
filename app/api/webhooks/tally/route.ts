@@ -84,8 +84,14 @@ export async function POST(req: NextRequest) {
 
   const rawBody = await req.text()
 
+  // Debug: log all headers to find the correct signature header name
+  const allHeaders: Record<string, string> = {}
+  req.headers.forEach((value, key) => { allHeaders[key] = value })
+  console.log('[webhooks/tally] Headers reçus:', JSON.stringify(allHeaders))
+
   // Validate signature — Tally sends it in the 'tally-signature' header
   const receivedSig = req.headers.get('tally-signature') ?? ''
+  console.log('[webhooks/tally] Signature reçue:', receivedSig)
   if (!validateSignature(rawBody, receivedSig, secret)) {
     console.warn('[webhooks/tally] Signature invalide')
     return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
