@@ -37,12 +37,13 @@ export type LeadRow = {
 }
 
 const STATUT_LABELS: Record<string, string> = {
-  nouveau: 'Nouveau',
-  qualifie: 'Qualifié',
-  reserve: 'Réservé',
-  present: 'Présent',
-  eleve: 'Élève',
-  ancien_eleve: 'Ancien élève',
+  nouveau:       'Nouveau',
+  qualifie:      'Qualifié',
+  reserve:       'Réservé',
+  present:       'Présent',
+  eleve:         'Élève',
+  ancien_eleve:  'Ancien élève',
+  non_qualifie:  'Non qualifié',
 }
 
 const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
@@ -52,6 +53,7 @@ const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
   present:      { bg: '#f0fdf4', color: '#15803d' },
   eleve:        { bg: '#fef9e3', color: '#d4a017' },
   ancien_eleve: { bg: '#faf5ff', color: '#7c3aed' },
+  non_qualifie: { bg: '#fef2f2', color: '#dc2626' },
 }
 
 const PIPELINE_STATUTS = ['nouveau', 'qualifie', 'reserve', 'present']
@@ -422,8 +424,8 @@ export default function LeadsClient({ initialLeads }: { initialLeads: LeadRow[] 
                       <p className="text-xs" style={{ color: 'var(--muted2)' }}>{lead.email}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge statut={lead.statut} />
-                      {lead.raison_archivage && (
+                      <StatusBadge statut={lead.raison_archivage === 'non_qualifie' ? 'non_qualifie' : lead.statut} />
+                      {lead.raison_archivage && lead.raison_archivage !== 'non_qualifie' && (
                         <p className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>
                           {lead.raison_archivage.replace(/_/g, ' ')}
                         </p>
