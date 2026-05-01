@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS leads (
   tranche_age      TEXT CHECK (tranche_age IN ('moins_de_30','30_45','45_60','plus_de_60')),
   objectifs        TEXT,
   problemes        TEXT,
+  questionnaire    JSONB,
 
   -- Lien élève (FK ajoutée plus bas)
   eleve_id         UUID,

@@ -21,6 +21,14 @@ export type LeadRow = {
   tranche_age: string | null
   objectifs: string | null
   problemes: string | null
+  questionnaire: {
+    anciennete?: string
+    essais_passes?: string
+    adhesion_programme?: string
+    attentes_cours?: string
+    delai_demarrage?: string
+    disqualification_raison?: string
+  } | null
   eleve_id: string | null
   created_at: string
   updated_at: string

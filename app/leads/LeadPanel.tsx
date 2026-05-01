@@ -449,26 +449,55 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
           {/* Questionnaire */}
           <div>
             {sectionTitle('Questionnaire')}
-            <div className="space-y-2 text-sm">
-              {currentLead.tranche_age && (
-                <div className="flex gap-2">
-                  <span style={{ color: 'var(--muted2)' }}>Âge :</span>
-                  <span style={{ color: 'var(--text)' }}>{TRANCHE_LABELS[currentLead.tranche_age] ?? currentLead.tranche_age}</span>
+            <div className="space-y-3 text-sm">
+              {currentLead.questionnaire?.disqualification_raison && (
+                <div className="px-3 py-2 rounded-lg text-xs font-semibold" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                  ✕ Non qualifié : {currentLead.questionnaire.disqualification_raison}
+                </div>
+              )}
+              {currentLead.questionnaire?.anciennete && (
+                <div>
+                  <span className="block mb-0.5 text-xs" style={{ color: 'var(--muted2)' }}>Ancienneté guitare</span>
+                  <p style={{ color: 'var(--text)', lineHeight: 1.5 }}>{currentLead.questionnaire.anciennete}</p>
                 </div>
               )}
               {currentLead.objectifs && (
                 <div>
-                  <span className="block mb-0.5" style={{ color: 'var(--muted2)' }}>Objectifs :</span>
+                  <span className="block mb-0.5 text-xs" style={{ color: 'var(--muted2)' }}>Objectifs</span>
                   <p style={{ color: 'var(--text)', lineHeight: 1.5 }}>{currentLead.objectifs}</p>
                 </div>
               )}
               {currentLead.problemes && (
                 <div>
-                  <span className="block mb-0.5" style={{ color: 'var(--muted2)' }}>Blocages :</span>
+                  <span className="block mb-0.5 text-xs" style={{ color: 'var(--muted2)' }}>Blocages</span>
                   <p style={{ color: 'var(--text)', lineHeight: 1.5 }}>{currentLead.problemes}</p>
                 </div>
               )}
-              {!currentLead.tranche_age && !currentLead.objectifs && !currentLead.problemes && (
+              {currentLead.questionnaire?.essais_passes && (
+                <div>
+                  <span className="block mb-0.5 text-xs" style={{ color: 'var(--muted2)' }}>Essais passés</span>
+                  <p style={{ color: 'var(--text)', lineHeight: 1.5 }}>{currentLead.questionnaire.essais_passes}</p>
+                </div>
+              )}
+              {currentLead.questionnaire?.adhesion_programme && (
+                <div>
+                  <span className="block mb-0.5 text-xs" style={{ color: 'var(--muted2)' }}>Programme Guitarisation</span>
+                  <p style={{ color: 'var(--text)', lineHeight: 1.5 }}>{currentLead.questionnaire.adhesion_programme}</p>
+                </div>
+              )}
+              {currentLead.questionnaire?.attentes_cours && (
+                <div>
+                  <span className="block mb-0.5 text-xs" style={{ color: 'var(--muted2)' }}>Attentes cours d'essai</span>
+                  <p style={{ color: 'var(--text)', lineHeight: 1.5 }}>{currentLead.questionnaire.attentes_cours}</p>
+                </div>
+              )}
+              {currentLead.questionnaire?.delai_demarrage && (
+                <div>
+                  <span className="block mb-0.5 text-xs" style={{ color: 'var(--muted2)' }}>Délai démarrage</span>
+                  <p style={{ color: 'var(--text)', lineHeight: 1.5 }}>{currentLead.questionnaire.delai_demarrage}</p>
+                </div>
+              )}
+              {!currentLead.questionnaire && !currentLead.objectifs && !currentLead.problemes && (
                 <span style={{ color: 'var(--muted)' }}>Questionnaire non renseigné</span>
               )}
             </div>
