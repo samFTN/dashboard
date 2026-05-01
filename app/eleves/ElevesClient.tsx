@@ -75,10 +75,18 @@ export default function ElevesClient({
   const list = tab === 'actifs' ? actifs : anciens
 
   function handleEleveChanged(id: string, changes: Partial<EleveRow>) {
-    const update = (prev: EleveRow[]) =>
-      prev.map(e => e.id === id ? { ...e, ...changes } : e)
-    setActifs(update)
-    setAnciens(update)
+    if (changes.actif === false) {
+      const eleve = actifs.find(e => e.id === id)
+      if (eleve) {
+        setActifs(prev => prev.filter(e => e.id !== id))
+        setAnciens(prev => [{ ...eleve, ...changes }, ...prev])
+      }
+    } else {
+      const update = (prev: EleveRow[]) =>
+        prev.map(e => e.id === id ? { ...e, ...changes } : e)
+      setActifs(update)
+      setAnciens(update)
+    }
     if (selected?.id === id) setSelected(prev => prev ? { ...prev, ...changes } : prev)
   }
 

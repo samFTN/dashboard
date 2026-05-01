@@ -389,6 +389,7 @@ export default function ElevePanel({
   })
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [ancienLoading, setAncienLoading] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -491,6 +492,22 @@ export default function ElevePanel({
     setConfirmDeleteFormule(null)
   }
 
+  async function marquerAncien() {
+    if (!confirm('Marquer cet élève comme ancien élève ?')) return
+    setAncienLoading(true)
+    try {
+      await fetch(`/api/eleves/${eleve.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actif: false }),
+      })
+      onChanged({ actif: false })
+      onClose()
+    } finally {
+      setAncienLoading(false)
+    }
+  }
+
   async function saveEdit() {
     setSaving(true)
     setSaveError(null)
@@ -587,6 +604,19 @@ export default function ElevePanel({
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {!editMode && eleve.actif && (
+              <button
+                onClick={marquerAncien}
+                disabled={ancienLoading}
+                style={{
+                  fontSize: 12, padding: '5px 12px', border: '1px solid var(--border)',
+                  borderRadius: 6, cursor: 'pointer', background: 'none', color: 'var(--muted2)',
+                  fontWeight: 500, opacity: ancienLoading ? 0.6 : 1,
+                }}
+              >
+                {ancienLoading ? '...' : 'Ancien élève'}
+              </button>
+            )}
             {!editMode ? (
               <button
                 onClick={() => {
