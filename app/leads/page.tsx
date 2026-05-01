@@ -11,7 +11,7 @@ async function fetchLeads() {
       l.raison_archivage, l.date_archivage,
       l.cours_essai_date, l.cours_essai_fait,
       l.prochaine_action_type, l.prochaine_action_date, l.prochaine_action_note,
-      l.tranche_age, l.objectifs, l.problemes,
+      l.tranche_age, l.objectifs, l.problemes, l.questionnaire,
       l.eleve_id::text,
       l.created_at, l.updated_at,
       MAX(ac.date) AS dernier_contact_date,
