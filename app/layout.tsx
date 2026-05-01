@@ -12,6 +12,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'Dashboard — Guitarisation™',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
