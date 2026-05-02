@@ -278,12 +278,15 @@ export default function FinancesClient({
               <p className="text-sm" style={{ color: 'var(--muted2)' }}>
                 SF PROD (EURL) · Guitarisation™
               </p>
-              {todayCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
-                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--accent)' }} />
-                  {todayCount} paiement{todayCount > 1 ? 's' : ''} aujourd&apos;hui
-                </span>
-              )}
+              <span
+                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={todayCount > 0
+                  ? { background: 'var(--accent-soft)', color: 'var(--accent)' }
+                  : { background: 'var(--border)', color: 'var(--muted)' }}
+              >
+                {todayCount > 0 && <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--accent)' }} />}
+                {todayCount} paiement{todayCount > 1 ? 's' : ''} aujourd&apos;hui
+              </span>
             </div>
           </div>
         </div>
