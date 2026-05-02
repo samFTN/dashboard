@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import Image from 'next/image'
+import Link from 'next/link'
 import './globals.css'
 import NavLink from './components/NavLink'
 import MobileNav from './components/MobileNav'
@@ -28,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           className="hidden md:flex md:w-52 shrink-0 flex-col"
           style={{ background: 'var(--card)', borderRight: '1px solid var(--border)' }}
         >
-          <div className="px-5 py-4 flex flex-col items-center" style={{ borderBottom: '1px solid var(--border)' }}>
+          <Link href="/" className="px-5 py-4 flex flex-col items-center hover:opacity-80 transition-opacity" style={{ borderBottom: '1px solid var(--border)' }}>
             <Image
               src="/logo.png"
               alt="Logo Guitarisation™"
@@ -38,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               priority
             />
             <p className="text-[11px] mt-1.5" style={{ color: 'var(--muted)' }}>Dashboard interne</p>
-          </div>
+          </Link>
 
           <nav className="flex-1 p-2 space-y-0.5">
             <NavLink href="/leads">Leads</NavLink>

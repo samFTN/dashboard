@@ -5,7 +5,19 @@ import { usePathname } from 'next/navigation'
 
 const navItems = [
   {
+    href: '/',
+    exact: true,
+    label: 'Accueil',
+    icon: (
+      <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12L12 3l9 9" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 21V12h6v9" />
+      </svg>
+    ),
+  },
+  {
     href: '/leads',
+    exact: false,
     label: 'Leads',
     icon: (
       <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -17,6 +29,7 @@ const navItems = [
   },
   {
     href: '/eleves',
+    exact: false,
     label: 'Élèves',
     icon: (
       <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -27,6 +40,7 @@ const navItems = [
   },
   {
     href: '/finances',
+    exact: false,
     label: 'Finances',
     icon: (
       <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -50,8 +64,8 @@ export default function MobileNav() {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {navItems.map(({ href, label, icon }) => {
-        const active = pathname.startsWith(href)
+      {navItems.map(({ href, exact, label, icon }) => {
+        const active = exact ? pathname === href : pathname.startsWith(href)
         return (
           <Link
             key={href}
