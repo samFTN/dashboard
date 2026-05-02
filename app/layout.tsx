@@ -4,7 +4,6 @@ import Image from 'next/image'
 import './globals.css'
 import NavLink from './components/NavLink'
 import MobileNav from './components/MobileNav'
-import pool from '@/lib/db'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -20,22 +19,7 @@ export const metadata: Metadata = {
   },
 }
 
-async function fetchTodayCounts() {
-  try {
-    const { rows } = await pool.query(`
-      SELECT
-        (SELECT COUNT(*) FROM leads      WHERE created_at::date = CURRENT_DATE)::int AS leads,
-        (SELECT COUNT(*) FROM eleves     WHERE created_at::date = CURRENT_DATE)::int AS eleves,
-        (SELECT COUNT(*) FROM echeances  WHERE date_encaissement = CURRENT_DATE)::int AS finances
-    `)
-    return rows[0] as { leads: number; eleves: number; finances: number }
-  } catch {
-    return { leads: 0, eleves: 0, finances: 0 }
-  }
-}
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const today = await fetchTodayCounts()
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${inter.className} h-full`}>
       <body className="h-full flex overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
@@ -57,9 +41,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </div>
 
           <nav className="flex-1 p-2 space-y-0.5">
-            <NavLink href="/leads" badge={today.leads}>Leads</NavLink>
-            <NavLink href="/eleves" badge={today.eleves}>Élèves</NavLink>
-            <NavLink href="/finances" badge={today.finances}>Finances</NavLink>
+            <NavLink href="/leads">Leads</NavLink>
+            <NavLink href="/eleves">Élèves</NavLink>
+            <NavLink href="/finances">Finances</NavLink>
           </nav>
 
           <div className="px-4 py-3" style={{ borderTop: '1px solid var(--border)' }}>
@@ -74,7 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </main>
 
         {/* Mobile bottom nav */}
-        <MobileNav badges={{ '/leads': today.leads, '/eleves': today.eleves, '/finances': today.finances }} />
+        <MobileNav />
       </body>
     </html>
   )

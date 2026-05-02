@@ -35,7 +35,14 @@ async function fetchLeads() {
   return rows
 }
 
+async function fetchTodayCount() {
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS count FROM leads WHERE created_at::date = CURRENT_DATE`
+  )
+  return rows[0].count as number
+}
+
 export default async function LeadsPage() {
-  const leads = await fetchLeads()
-  return <LeadsClient initialLeads={leads} />
+  const [leads, todayCount] = await Promise.all([fetchLeads(), fetchTodayCount()])
+  return <LeadsClient initialLeads={leads} todayCount={todayCount} />
 }

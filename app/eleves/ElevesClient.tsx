@@ -62,9 +62,11 @@ function AvancementBar({ seances, total }: { seances: number; total: number }) {
 export default function ElevesClient({
   initialActifs,
   initialAnciens,
+  todayCount,
 }: {
   initialActifs: EleveRow[]
   initialAnciens: EleveRow[]
+  todayCount: number
 }) {
   const [tab, setTab] = useState<'actifs' | 'anciens'>('actifs')
   const [actifs, setActifs] = useState<EleveRow[]>(initialActifs)
@@ -99,9 +101,17 @@ export default function ElevesClient({
             <h1 className="text-2xl font-black" style={{ color: 'var(--dark)', letterSpacing: '-0.5px' }}>
               Élèves
             </h1>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--muted2)' }}>
-              {actifs.length} actif{actifs.length !== 1 ? 's' : ''} · {anciens.length} ancien{anciens.length !== 1 ? 's' : ''}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-sm" style={{ color: 'var(--muted2)' }}>
+                {actifs.length} actif{actifs.length !== 1 ? 's' : ''} · {anciens.length} ancien{anciens.length !== 1 ? 's' : ''}
+              </p>
+              {todayCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--accent)' }} />
+                  {todayCount} aujourd&apos;hui
+                </span>
+              )}
+            </div>
           </div>
           <button
             onClick={() => setShowImport(true)}

@@ -115,6 +115,7 @@ export default function FinancesClient({
   alertes: initialAlertes,
   eleves,
   periode: initialPeriode,
+  todayCount,
 }: {
   kpis: Kpis
   outils: Outil[]
@@ -124,6 +125,7 @@ export default function FinancesClient({
   alertes: Alerte[]
   eleves: Eleve[]
   periode: Periode
+  todayCount: number
 }) {
   const [kpis, setKpis] = useState<Kpis>(initialKpis)
   const [outils, setOutils] = useState<Outil[]>(initialOutils)
@@ -272,9 +274,17 @@ export default function FinancesClient({
             <h1 className="text-2xl font-black" style={{ color: 'var(--dark)', letterSpacing: '-0.5px' }}>
               Finances
             </h1>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--muted2)' }}>
-              SF PROD (EURL) · Guitarisation™
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-sm" style={{ color: 'var(--muted2)' }}>
+                SF PROD (EURL) · Guitarisation™
+              </p>
+              {todayCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--accent)' }} />
+                  {todayCount} paiement{todayCount > 1 ? 's' : ''} aujourd&apos;hui
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

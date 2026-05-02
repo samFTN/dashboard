@@ -240,7 +240,7 @@ function CreateLeadModal({
   )
 }
 
-export default function LeadsClient({ initialLeads }: { initialLeads: LeadRow[] }) {
+export default function LeadsClient({ initialLeads, todayCount }: { initialLeads: LeadRow[]; todayCount: number }) {
   const [leads, setLeads] = useState<LeadRow[]>(initialLeads)
   const [showArchived, setShowArchived] = useState(false)
   const [filterStatut, setFilterStatut] = useState('')
@@ -337,9 +337,17 @@ export default function LeadsClient({ initialLeads }: { initialLeads: LeadRow[] 
             <h1 className="text-2xl font-black" style={{ color: 'var(--dark)', letterSpacing: '-0.5px' }}>
               Leads
             </h1>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--muted2)' }}>
-              {leads.length} lead{leads.length > 1 ? 's' : ''} {showArchived ? 'archivé' : 'actif'}{leads.length > 1 ? 's' : ''}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-sm" style={{ color: 'var(--muted2)' }}>
+                {leads.length} lead{leads.length > 1 ? 's' : ''} {showArchived ? 'archivé' : 'actif'}{leads.length > 1 ? 's' : ''}
+              </p>
+              {todayCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--accent)' }} />
+                  {todayCount} aujourd&apos;hui
+                </span>
+              )}
+            </div>
           </div>
           {!showArchived && (
             <button

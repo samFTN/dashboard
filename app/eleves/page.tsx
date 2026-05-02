@@ -3,6 +3,13 @@ import ElevesClient from './ElevesClient'
 
 export const dynamic = 'force-dynamic'
 
+async function fetchTodayCount() {
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS count FROM eleves WHERE created_at::date = CURRENT_DATE`
+  )
+  return rows[0].count as number
+}
+
 async function fetchEleves(actif: boolean) {
   const { rows } = await pool.query(
     `SELECT
@@ -38,9 +45,10 @@ async function fetchEleves(actif: boolean) {
 }
 
 export default async function ElevesPage() {
-  const [actifs, anciens] = await Promise.all([
+  const [actifs, anciens, todayCount] = await Promise.all([
     fetchEleves(true),
     fetchEleves(false),
+    fetchTodayCount(),
   ])
-  return <ElevesClient initialActifs={actifs} initialAnciens={anciens} />
+  return <ElevesClient initialActifs={actifs} initialAnciens={anciens} todayCount={todayCount} />
 }

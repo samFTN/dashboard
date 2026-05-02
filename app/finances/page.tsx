@@ -116,6 +116,12 @@ async function fetchInitial() {
   const charges_total = charges_outils + charges_prof + charges_meta
   const revenus_encaisses = parseFloat(row.revenus_encaisses)
 
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayCount = echeances.rows.filter(
+    (r: { encaisse: boolean; date_encaissement: string | null }) =>
+      r.encaisse && r.date_encaissement === todayStr
+  ).length
+
   return {
     kpis: {
       revenus_contractes: parseFloat(row.revenus_contractes),
@@ -135,10 +141,11 @@ async function fetchInitial() {
     alertes: alertes.rows,
     eleves: eleves.rows,
     periode: { debut, fin },
+    todayCount,
   }
 }
 
 export default async function FinancesPage() {
   const data = await fetchInitial()
-  return <FinancesClient {...data} />
+  return <FinancesClient {...data} todayCount={data.todayCount} />
 }
