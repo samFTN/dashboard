@@ -37,7 +37,7 @@ const navItems = [
   },
 ]
 
-export default function MobileNav() {
+export default function MobileNav({ badges }: { badges?: Record<string, number> }) {
   const pathname = usePathname()
 
   return (
@@ -52,18 +52,29 @@ export default function MobileNav() {
     >
       {navItems.map(({ href, label, icon }) => {
         const active = pathname.startsWith(href)
+        const badge = badges?.[href]
         return (
           <Link
             key={href}
             href={href}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5"
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 relative"
             style={{
               color: active ? 'var(--accent)' : 'var(--muted)',
               fontSize: 10,
               fontWeight: active ? 700 : 500,
             }}
           >
-            {icon}
+            <span className="relative">
+              {icon}
+              {badge != null && badge > 0 && (
+                <span
+                  className="absolute -top-1 -right-2 text-[9px] font-bold leading-none px-1 py-px rounded-full"
+                  style={{ background: 'var(--accent)', color: '#fff', minWidth: 14, textAlign: 'center' }}
+                >
+                  {badge}
+                </span>
+              )}
+            </span>
             <span>{label}</span>
           </Link>
         )
