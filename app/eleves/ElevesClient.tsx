@@ -112,7 +112,7 @@ export default function ElevesClient({
                   : { background: 'var(--border)', color: 'var(--muted)' }}
               >
                 {todayCount > 0 && <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--accent)' }} />}
-                {todayCount} aujourd&apos;hui
+                {todayCount}{' '}aujourd&apos;hui
               </span>
             </div>
           </div>

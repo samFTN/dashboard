@@ -285,7 +285,7 @@ export default function FinancesClient({
                   : { background: 'var(--border)', color: 'var(--muted)' }}
               >
                 {todayCount > 0 && <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--accent)' }} />}
-                {todayCount} paiement{todayCount > 1 ? 's' : ''} aujourd&apos;hui
+                {todayCount}{' '}paiement{todayCount > 1 ? 's' : ''}{' '}aujourd&apos;hui
               </span>
             </div>
           </div>
