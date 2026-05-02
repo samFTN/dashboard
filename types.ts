@@ -7,7 +7,7 @@
 // ------------------------------------------------------------
 
 export type LeadStatut =
-  | 'nouveau'
+  | 'non_qualifie'
   | 'qualifie'
   | 'reserve'
   | 'present'

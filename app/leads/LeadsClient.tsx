@@ -37,26 +37,24 @@ export type LeadRow = {
 }
 
 const STATUT_LABELS: Record<string, string> = {
-  nouveau:       'Nouveau',
+  non_qualifie:  'Non qualifié',
   qualifie:      'Qualifié',
   reserve:       'Réservé',
   present:       'Présent',
   eleve:         'Élève',
   ancien_eleve:  'Ancien élève',
-  non_qualifie:  'Non qualifié',
 }
 
 const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
-  nouveau:      { bg: '#f3f4f6', color: '#4b5563' },
+  non_qualifie: { bg: '#fef2f2', color: '#dc2626' },
   qualifie:     { bg: '#eff6ff', color: '#1d4ed8' },
   reserve:      { bg: '#fef9e3', color: '#a16207' },
   present:      { bg: '#f0fdf4', color: '#15803d' },
   eleve:        { bg: '#fef9e3', color: '#d4a017' },
   ancien_eleve: { bg: '#faf5ff', color: '#7c3aed' },
-  non_qualifie: { bg: '#fef2f2', color: '#dc2626' },
 }
 
-const PIPELINE_STATUTS = ['nouveau', 'qualifie', 'reserve', 'present']
+const PIPELINE_STATUTS = ['non_qualifie', 'qualifie', 'reserve', 'present']
 
 function fmt(iso: string | null): string {
   if (!iso) return '—'

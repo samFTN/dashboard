@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
         await pool.query(
           `INSERT INTO leads (nom, email, telephone, source, objectifs, problemes, statut, questionnaire,
              archive, raison_archivage, date_archivage)
-           VALUES ($1, $2, $3, 'pub_meta', $4, $5, 'nouveau', $6, true, 'non_qualifie', NOW())`,
+           VALUES ($1, $2, $3, 'pub_meta', $4, $5, 'non_qualifie', $6, true, 'non_qualifie', NOW())`,
           [nom, email, telephone || null, objectifs || null, problemes || null, questionnaire]
         )
       }

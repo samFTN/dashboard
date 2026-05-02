@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS leads (
   telephone        TEXT,
 
   -- Pipeline
-  statut           TEXT NOT NULL DEFAULT 'nouveau'
-                   CHECK (statut IN ('nouveau','qualifie','reserve','present','eleve','ancien_eleve')),
+  statut           TEXT NOT NULL DEFAULT 'non_qualifie'
+                   CHECK (statut IN ('non_qualifie','qualifie','reserve','present','eleve','ancien_eleve')),
   source           TEXT NOT NULL
                    CHECK (source IN ('pub_meta','organique')),
 

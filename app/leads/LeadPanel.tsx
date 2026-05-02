@@ -6,7 +6,7 @@ import type { LeadRow } from './LeadsClient'
 type Formule = { id: string; label: string; duree_mois: number }
 
 const STATUT_LABELS: Record<string, string> = {
-  nouveau: 'Nouveau',
+  non_qualifie: 'Non qualifié',
   qualifie: 'Qualifié',
   reserve: 'Réservé',
   present: 'Présent',
@@ -303,7 +303,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                 disabled={saving}
                 style={{ ...inputStyle, cursor: 'pointer' }}
               >
-                <option value="nouveau">Nouveau</option>
+                <option value="non_qualifie">Non qualifié</option>
                 <option value="qualifie">Qualifié</option>
                 <option value="reserve">Réservé</option>
                 <option value="present">Présent</option>
@@ -595,7 +595,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
         <div className="px-6 py-4 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
 
           {/* Convertir en élève (tous statuts actifs) */}
-          {['nouveau', 'qualifie', 'reserve', 'present'].includes(currentLead.statut) && (
+          {['non_qualifie', 'qualifie', 'reserve', 'present'].includes(currentLead.statut) && (
             <button
               onClick={() => setShowConvertModal(true)}
               disabled={saving}
