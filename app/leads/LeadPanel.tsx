@@ -269,7 +269,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
             </h2>
             <ContactActions
               email={currentLead.email}
-              telephone={currentLead.telephone}
+              telephone={currentLead.telephone ?? undefined}
               style={{ marginTop: 2 }}
             />
           </div>
