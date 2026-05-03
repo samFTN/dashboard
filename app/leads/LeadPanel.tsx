@@ -510,7 +510,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs" style={{ color: 'var(--muted2)' }}>
-                        {fmt(action.date, true)}
+                        {fmt(action.date)}
                       </p>
                       {action.note && (
                         <p className="text-sm mt-0.5" style={{ color: 'var(--text)', lineHeight: 1.4 }}>
