@@ -553,8 +553,8 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                     <option value="cours_essai">Cours d'essai</option>
                   </select>
                   <input
-                    type="datetime-local"
-                    value={actionForm.date.includes('T') ? actionForm.date.slice(0, 16) : actionForm.date + 'T00:00'}
+                    type="date"
+                    value={actionForm.date.slice(0, 10)}
                     onChange={e => setActionForm(p => ({ ...p, date: e.target.value }))}
                     style={inputStyle}
                   />
