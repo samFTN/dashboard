@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { EleveRow } from './ElevesClient'
+import { ContactActions } from '@/app/components/ContactActions'
 
 type VoletProf = {
   presence: boolean
@@ -628,9 +629,11 @@ export default function ElevePanel({
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--dark)' }}>
               {editMode ? editForm.nom || eleve.nom : eleve.nom}
             </h2>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
-              {eleve.email}{eleve.telephone ? ` · ${eleve.telephone}` : ''}
-            </div>
+            <ContactActions
+              email={eleve.email}
+              telephone={eleve.telephone ?? undefined}
+              style={{ marginTop: 4 }}
+            />
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {!editMode && eleve.actif && (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { LeadRow } from './LeadsClient'
+import { ContactActions } from '@/app/components/ContactActions'
 
 type Formule = { id: string; label: string; duree_mois: number }
 
@@ -266,14 +267,11 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
             <h2 className="text-base font-bold truncate" style={{ color: 'var(--dark)' }}>
               {currentLead.nom}
             </h2>
-            <p className="text-sm truncate mt-0.5" style={{ color: 'var(--muted2)' }}>
-              {currentLead.email}
-            </p>
-            {currentLead.telephone && (
-              <p className="text-sm mt-0.5" style={{ color: 'var(--muted2)' }}>
-                {currentLead.telephone}
-              </p>
-            )}
+            <ContactActions
+              email={currentLead.email}
+              telephone={currentLead.telephone}
+              style={{ marginTop: 2 }}
+            />
           </div>
           <button
             onClick={onClose}
