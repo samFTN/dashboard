@@ -389,13 +389,42 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                 ) : (
                   <span className="text-sm" style={{ color: 'var(--muted)' }}>Non planifiée</span>
                 )}
-                <button
-                  onClick={() => setShowProchaineForm(true)}
-                  className="text-xs px-2.5 py-1.5 rounded-lg font-medium"
-                  style={{ border: '1.5px solid var(--border)', color: 'var(--muted2)' }}
-                >
-                  {currentLead.prochaine_action_type ? 'Modifier' : 'Planifier'}
-                </button>
+                <div className="flex gap-2">
+                  {currentLead.prochaine_action_type && (
+                    <button
+                      onClick={async () => {
+                        setSaving(true)
+                        setError(null)
+                        try {
+                          const body = { prochaine_action_type: null, prochaine_action_date: null, prochaine_action_note: null }
+                          const res = await fetch(`/api/leads/${currentLead.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body),
+                          })
+                          if (!res.ok) throw new Error()
+                          update(body as Partial<LeadRow>)
+                        } catch {
+                          setError('Erreur lors de la suppression')
+                        } finally {
+                          setSaving(false)
+                        }
+                      }}
+                      disabled={saving}
+                      className="text-xs px-2.5 py-1.5 rounded-lg font-medium"
+                      style={{ border: '1.5px solid var(--border)', color: 'var(--danger, #e53e3e)' }}
+                    >
+                      Supprimer
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowProchaineForm(true)}
+                    className="text-xs px-2.5 py-1.5 rounded-lg font-medium"
+                    style={{ border: '1.5px solid var(--border)', color: 'var(--muted2)' }}
+                  >
+                    {currentLead.prochaine_action_type ? 'Modifier' : 'Planifier'}
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-2 p-3 rounded-xl" style={{ background: 'var(--bg)' }}>
