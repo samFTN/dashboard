@@ -34,17 +34,16 @@ function validateSignature(rawBody: string, header: string, secret: string): boo
 
 export async function POST(req: NextRequest) {
   const secret = process.env.CALENDLY_WEBHOOK_SECRET
-  if (!secret) {
-    console.error('[webhooks/calendly] CALENDLY_WEBHOOK_SECRET manquant')
-    return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 })
-  }
-
   const rawBody = await req.text()
 
-  const sigHeader = req.headers.get('Calendly-Webhook-Signature') ?? ''
-  if (!validateSignature(rawBody, sigHeader, secret)) {
-    console.warn('[webhooks/calendly] Signature invalide')
-    return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
+  if (secret) {
+    const sigHeader = req.headers.get('Calendly-Webhook-Signature') ?? ''
+    if (!validateSignature(rawBody, sigHeader, secret)) {
+      console.warn('[webhooks/calendly] Signature invalide')
+      return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
+    }
+  } else {
+    console.warn('[webhooks/calendly] CALENDLY_WEBHOOK_SECRET non configuré — validation désactivée')
   }
 
   let payload: CalendlyPayload
