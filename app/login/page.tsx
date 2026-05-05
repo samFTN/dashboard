@@ -14,17 +14,22 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    })
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
 
-    if (res.ok) {
-      router.push('/')
-      router.refresh()
-    } else {
-      setError('Mot de passe incorrect')
+      if (res.ok) {
+        router.push('/')
+        router.refresh()
+      } else {
+        setError('Mot de passe incorrect')
+        setLoading(false)
+      }
+    } catch {
+      setError('Erreur réseau, réessaie')
       setLoading(false)
     }
   }
