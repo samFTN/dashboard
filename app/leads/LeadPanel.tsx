@@ -32,9 +32,19 @@ function fmt(iso: string | null, withTime = false): string {
   if (!iso) return '—'
   const d = new Date(iso)
   if (withTime) {
-    return d.toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   }
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+  return d.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: 'long', year: 'numeric' })
+}
+
+// Extrait la date YYYY-MM-DD en heure Paris
+function parisDateStr(iso: string): string {
+  return new Date(iso).toLocaleDateString('sv', { timeZone: 'Europe/Paris' })
+}
+
+// Extrait l'heure HH:MM en heure Paris
+function parisTimeStr(iso: string): string {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso))
 }
 
 type Action = { id: string; type: string; date: string; note: string | null }
@@ -329,18 +339,18 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                   <div className="flex gap-2">
                     <input
                       type="date"
-                      value={currentLead.cours_essai_date?.slice(0, 10) ?? ''}
+                      value={currentLead.cours_essai_date ? parisDateStr(currentLead.cours_essai_date) : ''}
                       onChange={e => {
-                        const time = currentLead.cours_essai_date?.slice(11, 16) ?? '09:00'
-                        handleCoursEssaiChange('cours_essai_date', e.target.value ? `${e.target.value}T${time}` : null as unknown as string)
+                        const time = currentLead.cours_essai_date ? parisTimeStr(currentLead.cours_essai_date) : '09:00'
+                        handleCoursEssaiChange('cours_essai_date', e.target.value ? new Date(`${e.target.value}T${time}:00`).toISOString() : null as unknown as string)
                       }}
                       style={{ ...inputStyle, flex: 1 }}
                     />
                     <select
-                      value={currentLead.cours_essai_date?.slice(11, 16) ?? ''}
+                      value={currentLead.cours_essai_date ? parisTimeStr(currentLead.cours_essai_date) : ''}
                       onChange={e => {
-                        const date = currentLead.cours_essai_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10)
-                        handleCoursEssaiChange('cours_essai_date', `${date}T${e.target.value}`)
+                        const date = currentLead.cours_essai_date ? parisDateStr(currentLead.cours_essai_date) : new Date().toLocaleDateString('sv', { timeZone: 'Europe/Paris' })
+                        handleCoursEssaiChange('cours_essai_date', new Date(`${date}T${e.target.value}:00`).toISOString())
                       }}
                       style={{ ...inputStyle, width: 100, flex: 'none' }}
                     >
