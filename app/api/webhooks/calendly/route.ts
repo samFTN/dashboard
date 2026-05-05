@@ -94,7 +94,8 @@ export async function POST(req: NextRequest) {
 
       await pool.query(
         `INSERT INTO actions_contact (lead_id, type, date, note)
-         VALUES ($1, 'cours_essai', $2, 'Réservation automatique via Calendly')`,
+         VALUES ($1, 'cours_essai', $2, 'Réservation automatique via Calendly')
+         ON CONFLICT DO NOTHING`,
         [leadId, startTime]
       )
 
