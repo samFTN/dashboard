@@ -22,8 +22,7 @@ export default function LoginPage() {
       })
 
       if (res.ok) {
-        router.push('/')
-        router.refresh()
+        window.location.href = '/'
       } else {
         setError('Mot de passe incorrect')
         setLoading(false)
