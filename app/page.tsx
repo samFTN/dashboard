@@ -26,7 +26,7 @@ async function fetchAll() {
   const now = new Date()
   const debutMois = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
 
-  const [alertesLeads, pipeline, eleves, finances, actionsJour] = await Promise.all([
+  const [alertesLeads, pipeline, eleves, actionsJour, finances] = await Promise.all([
     // 1. Alertes leads
     pool.query(`
       SELECT
