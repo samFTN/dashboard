@@ -176,35 +176,41 @@ export default async function HomePage() {
 
       {/* Actions du jour */}
       {actions.length > 0 && (
-        <div className="rounded-2xl mb-5 overflow-hidden" style={{ border: '1px solid var(--border)' }}>
-          <div className="px-4 py-3" style={{ background: 'var(--card)', borderBottom: '1px solid var(--border)' }}>
-            <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
-              Actions du jour · {actions.length}
+        <div className="rounded-2xl mb-5 overflow-hidden" style={{ border: '2px solid var(--accent)', background: 'var(--card)' }}>
+          <div className="px-4 py-3 flex items-center justify-between" style={{ background: 'var(--accent)', }}>
+            <p className="text-sm font-black uppercase tracking-wider text-white">
+              {actions.length} action{actions.length > 1 ? 's' : ''} à faire aujourd&apos;hui
             </p>
+            <span className="text-white text-lg font-black">{actions.length}</span>
           </div>
-          <div className="divide-y" style={{ background: 'var(--card)', '--tw-divide-color': 'var(--border)' } as React.CSSProperties}>
-            {actions.map((a: { id: string; nom: string; telephone: string | null; statut: string; prochaine_action_type: string; prochaine_action_date: string; prochaine_action_note: string | null }) => {
+          <div style={{ borderTop: 'none' }}>
+            {actions.map((a: { id: string; nom: string; telephone: string | null; statut: string; prochaine_action_type: string; prochaine_action_date: string; prochaine_action_note: string | null }, i: number) => {
               const retard = new Date(a.prochaine_action_date) < new Date(new Date().toDateString())
               return (
-                <Link key={a.id} href={`/leads?id=${a.id}`} className="flex items-center gap-3 px-4 py-3 hover:opacity-80 transition-opacity">
+                <Link
+                  key={a.id}
+                  href={`/leads?id=${a.id}`}
+                  className="flex items-center gap-3 px-4 py-3.5 hover:opacity-75 transition-opacity"
+                  style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
+                >
                   <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                    style={{ background: ACTION_COLORS[a.prochaine_action_type] + '18', color: ACTION_COLORS[a.prochaine_action_type] }}
+                    className="text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0"
+                    style={{ background: ACTION_COLORS[a.prochaine_action_type] + '20', color: ACTION_COLORS[a.prochaine_action_type] }}
                   >
                     {ACTION_LABELS[a.prochaine_action_type]}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--dark)' }}>{a.nom}</p>
+                    <p className="text-sm font-bold truncate" style={{ color: 'var(--dark)' }}>{a.nom}</p>
                     {a.prochaine_action_note && (
-                      <p className="text-xs truncate" style={{ color: 'var(--muted)' }}>{a.prochaine_action_note}</p>
+                      <p className="text-xs truncate mt-0.5" style={{ color: 'var(--muted)' }}>{a.prochaine_action_note}</p>
                     )}
                   </div>
                   <div className="text-right shrink-0">
                     {a.telephone && (
-                      <p className="text-xs font-medium" style={{ color: 'var(--muted2)' }}>{a.telephone}</p>
+                      <p className="text-xs font-semibold" style={{ color: 'var(--dark)' }}>{a.telephone}</p>
                     )}
                     {retard && (
-                      <p className="text-[10px] font-semibold" style={{ color: '#dc2626' }}>En retard</p>
+                      <p className="text-[10px] font-bold mt-0.5" style={{ color: '#dc2626' }}>En retard</p>
                     )}
                   </div>
                 </Link>
