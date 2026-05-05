@@ -313,6 +313,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
   }
 
   const today = new Date().toISOString().slice(0, 10)
+  const [filterAujourdhui, setFilterAujourdhui] = useState(false)
   const actionItems = !showArchived ? (() => {
     const aRelancer = leads.filter(l =>
       l.prochaine_action_date && l.prochaine_action_date.slice(0, 10) < today
@@ -323,9 +324,13 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
     ).length
     const sansPlan = leads.filter(l =>
       !l.prochaine_action_date &&
+      !(l.statut === 'reserve' && l.cours_essai_date) &&
       ['qualifie', 'reserve', 'present'].includes(l.statut)
     ).length
-    return { aRelancer, coursAujourdhui, sansPlan }
+    const aFaireAujourdhui = leads.filter(l =>
+      l.prochaine_action_date?.slice(0, 10) === today
+    ).length
+    return { aRelancer, coursAujourdhui, sansPlan, aFaireAujourdhui }
   })() : null
 
   return (
@@ -399,13 +404,24 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
       </div>
 
       {/* Bandeau actions */}
-      {actionItems && (actionItems.aRelancer > 0 || actionItems.coursAujourdhui > 0 || actionItems.sansPlan > 0) && (
+      {actionItems && (actionItems.aRelancer > 0 || actionItems.coursAujourdhui > 0 || actionItems.sansPlan > 0 || actionItems.aFaireAujourdhui > 0) && (
         <div className="px-4 md:px-8 pt-3">
           <div className="flex items-center gap-2 flex-wrap rounded-xl px-4 py-2.5" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
             <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>À faire</span>
+            {actionItems.aFaireAujourdhui > 0 && (
+              <button
+                onClick={() => setFilterAujourdhui(f => !f)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold transition-opacity hover:opacity-75"
+                style={filterAujourdhui
+                  ? { background: 'var(--accent)', color: 'white', border: '1px solid var(--accent)' }
+                  : { background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent)' }}
+              >
+                ✓ {actionItems.aFaireAujourdhui} aujourd&apos;hui
+              </button>
+            )}
             {actionItems.aRelancer > 0 && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>
-                ⏰ {actionItems.aRelancer} lead{actionItems.aRelancer > 1 ? 's' : ''} à relancer
+                ⏰ {actionItems.aRelancer} à relancer
               </span>
             )}
             {actionItems.coursAujourdhui > 0 && (
@@ -450,7 +466,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                   </td>
                 </tr>
               ) : (
-                leads.map((lead, i) => (
+                leads.filter(l => !filterAujourdhui || l.prochaine_action_date?.slice(0, 10) === today).map((lead, i) => (
                   <tr
                     key={lead.id}
                     onClick={() => setSelectedLead(lead)}
@@ -490,18 +506,24 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                       {timeAgo(lead.dernier_contact_date)}
                     </td>
                     <td className="px-4 py-3">
-                      {lead.prochaine_action_type ? (
-                        <>
-                          <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
-                            {lead.prochaine_action_type === 'cours_essai' ? "Cours d'essai" : lead.prochaine_action_type.toUpperCase()}
-                          </p>
-                          <p className="text-xs" style={{ color: 'var(--muted2)' }}>
-                            {fmt(lead.prochaine_action_date)}
-                          </p>
-                        </>
-                      ) : (
-                        <span className="text-xs" style={{ color: 'var(--muted)' }}>—</span>
-                      )}
+                      {(() => {
+                        const actionType = lead.prochaine_action_type
+                          ?? (lead.statut === 'reserve' && lead.cours_essai_date ? 'cours_essai' : null)
+                        const actionDate = lead.prochaine_action_date
+                          ?? (lead.statut === 'reserve' ? lead.cours_essai_date : null)
+                        return actionType ? (
+                          <>
+                            <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
+                              {actionType === 'cours_essai' ? "Cours d'essai" : actionType.toUpperCase()}
+                            </p>
+                            <p className="text-xs" style={{ color: 'var(--muted2)' }}>
+                              {fmt(actionDate)}
+                            </p>
+                          </>
+                        ) : (
+                          <span className="text-xs" style={{ color: 'var(--muted)' }}>—</span>
+                        )
+                      })()}
                     </td>
                   </tr>
                 ))

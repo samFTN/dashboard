@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import ActionsJour from './components/ActionsJour'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,19 +59,13 @@ async function fetchAll() {
       FROM eleves
     `),
 
-    // 4. Actions du jour (retard inclus + cours d'essai à venir des leads réservés)
+    // 4. Actions du jour (aujourd'hui ou en retard uniquement)
     pool.query(`
-      SELECT id, nom, telephone, statut,
-             COALESCE(prochaine_action_type, 'cours_essai') AS prochaine_action_type,
-             COALESCE(prochaine_action_date, cours_essai_date)  AS prochaine_action_date,
-             prochaine_action_note
+      SELECT id, nom, telephone, statut, prochaine_action_type, prochaine_action_date, prochaine_action_note
       FROM leads
       WHERE archive = false
-        AND (
-          prochaine_action_date::date <= CURRENT_DATE
-          OR (statut = 'reserve' AND cours_essai_date IS NOT NULL)
-        )
-      ORDER BY COALESCE(prochaine_action_date, cours_essai_date) ASC
+        AND prochaine_action_date::date <= CURRENT_DATE
+      ORDER BY prochaine_action_date ASC
     `),
 
     // 6. Finances mois courant
@@ -125,9 +120,6 @@ async function fetchAll() {
   }
 }
 
-const ACTION_LABELS: Record<string, string> = { appel: 'Appel', sms: 'SMS', cours_essai: 'Cours d\'essai' }
-const ACTION_COLORS: Record<string, string> = { appel: '#1d4ed8', sms: '#15803d', cours_essai: '#d97706' }
-
 export default async function HomePage() {
   const { leads, eleves, finances, actions, totalAlertes, dateLabel } = await fetchAll()
 
@@ -180,51 +172,7 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* Actions du jour */}
-      {actions.length > 0 && (
-        <div className="rounded-2xl mb-5 overflow-hidden" style={{ border: '2px solid var(--accent)', background: 'var(--card)' }}>
-          <div className="px-4 py-3 flex items-center justify-between" style={{ background: 'var(--accent)', }}>
-            <p className="text-sm font-black uppercase tracking-wider text-white">
-              {actions.length} action{actions.length > 1 ? 's' : ''} à faire aujourd&apos;hui
-            </p>
-            <span className="text-white text-lg font-black">{actions.length}</span>
-          </div>
-          <div style={{ borderTop: 'none' }}>
-            {actions.map((a: { id: string; nom: string; telephone: string | null; statut: string; prochaine_action_type: string; prochaine_action_date: string; prochaine_action_note: string | null }, i: number) => {
-              const retard = new Date(a.prochaine_action_date) < new Date(new Date().toDateString())
-              return (
-                <Link
-                  key={a.id}
-                  href={`/leads?id=${a.id}`}
-                  className="flex items-center gap-3 px-4 py-3.5 hover:opacity-75 transition-opacity"
-                  style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
-                >
-                  <span
-                    className="text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0"
-                    style={{ background: ACTION_COLORS[a.prochaine_action_type] + '20', color: ACTION_COLORS[a.prochaine_action_type] }}
-                  >
-                    {ACTION_LABELS[a.prochaine_action_type]}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold truncate" style={{ color: 'var(--dark)' }}>{a.nom}</p>
-                    {a.prochaine_action_note && (
-                      <p className="text-xs truncate mt-0.5" style={{ color: 'var(--muted)' }}>{a.prochaine_action_note}</p>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0">
-                    {a.telephone && (
-                      <p className="text-xs font-semibold" style={{ color: 'var(--dark)' }}>{a.telephone}</p>
-                    )}
-                    {retard && (
-                      <p className="text-[10px] font-bold mt-0.5" style={{ color: '#dc2626' }}>En retard</p>
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      )}
+      <ActionsJour actions={actions} />
 
       {/* Leads + Élèves */}
       <div className="grid grid-cols-2 gap-3 mb-3">
