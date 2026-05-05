@@ -54,7 +54,13 @@ export function ContactActions({ email, telephone, style, className }: ContactAc
           </span>
           {showEmail && (
             <>
-              <a href={`mailto:${email}`} style={btnStyle} onClick={e => e.stopPropagation()}>
+              <a
+                href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={btnStyle}
+                onClick={e => e.stopPropagation()}
+              >
                 ✉ Email
               </a>
               <button
