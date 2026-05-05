@@ -25,7 +25,7 @@ export default function ActionsJour({ actions }: { actions: Action[] }) {
     <div className="rounded-2xl mb-5 overflow-hidden" style={{ border: '2px solid var(--accent)', background: 'var(--card)' }}>
       <div className="px-4 py-3 flex items-center justify-between" style={{ background: 'var(--accent)' }}>
         <p className="text-sm font-black uppercase tracking-wider text-white">
-          {actions.length} action{actions.length > 1 ? 's' : ''} à faire aujourd&apos;hui
+          {actions.length} action{actions.length > 1 ? 's' : ''}{' '}à faire aujourd&apos;hui
         </p>
         <span className="text-white text-lg font-black">{actions.length}</span>
       </div>
