@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'JSON invalide' }, { status: 400 })
   }
 
-  console.log('[webhooks/calendly] payload brut:', JSON.stringify(payload).slice(0, 500))
+  console.log('[webhooks/calendly] payload brut:', JSON.stringify(payload).slice(0, 2000))
 
   const email = payload.payload?.invitee?.email?.toLowerCase().trim()
   const startTime = payload.payload?.event?.start_time
