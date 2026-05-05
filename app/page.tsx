@@ -58,13 +58,19 @@ async function fetchAll() {
       FROM eleves
     `),
 
-    // 4. Actions du jour (retard inclus)
+    // 4. Actions du jour (retard inclus + cours d'essai à venir des leads réservés)
     pool.query(`
-      SELECT id, nom, telephone, statut, prochaine_action_type, prochaine_action_date, prochaine_action_note
+      SELECT id, nom, telephone, statut,
+             COALESCE(prochaine_action_type, 'cours_essai') AS prochaine_action_type,
+             COALESCE(prochaine_action_date, cours_essai_date)  AS prochaine_action_date,
+             prochaine_action_note
       FROM leads
       WHERE archive = false
-        AND prochaine_action_date::date <= CURRENT_DATE
-      ORDER BY prochaine_action_date ASC
+        AND (
+          prochaine_action_date::date <= CURRENT_DATE
+          OR (statut = 'reserve' AND cours_essai_date IS NOT NULL)
+        )
+      ORDER BY COALESCE(prochaine_action_date, cours_essai_date) ASC
     `),
 
     // 6. Finances mois courant
