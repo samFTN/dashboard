@@ -5,8 +5,9 @@ import pool from '@/lib/db'
 interface CalendlyPayload {
   event: string
   payload: {
-    event: { start_time: string; end_time: string }
-    invitee: { email: string; name: string }
+    email: string
+    name: string
+    scheduled_event: { start_time: string; end_time: string }
   }
 }
 
@@ -53,13 +54,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'JSON invalide' }, { status: 400 })
   }
 
-  console.log('[webhooks/calendly] payload brut:', JSON.stringify(payload).slice(0, 2000))
-
-  const email = payload.payload?.invitee?.email?.toLowerCase().trim()
-  const startTime = payload.payload?.event?.start_time
+  const email = payload.payload?.email?.toLowerCase().trim()
+  const startTime = payload.payload?.scheduled_event?.start_time
 
   if (!email) {
-    console.warn('[webhooks/calendly] Email manquant — keys reçues:', Object.keys(payload.payload ?? {}))
+    console.warn('[webhooks/calendly] Email manquant')
     return NextResponse.json({ ok: true })
   }
 
