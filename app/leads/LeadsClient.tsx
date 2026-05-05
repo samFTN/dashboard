@@ -541,6 +541,10 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
           onLeadChanged={handleLeadChanged}
           onArchived={handleLeadArchived}
           onActionAdded={handleActionAdded}
+          onDeleted={() => {
+            setLeads(prev => prev.filter(l => l.id !== selectedLead.id))
+            setSelectedLead(null)
+          }}
         />
       )}
 

@@ -49,15 +49,54 @@ function parisTimeStr(iso: string): string {
 
 type Action = { id: string; type: string; date: string; note: string | null }
 
+function DeleteButton({ leadId, onDeleted }: { leadId: string; onDeleted: () => void }) {
+  const [confirm, setConfirm] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  async function handleDelete() {
+    setLoading(true)
+    await fetch(`/api/leads/${leadId}`, { method: 'DELETE' })
+    onDeleted()
+  }
+
+  if (!confirm) {
+    return (
+      <button
+        onClick={() => setConfirm(true)}
+        className="w-full py-2 rounded-xl text-xs font-medium"
+        style={{ border: '1.5px solid #fecaca', color: '#dc2626' }}
+      >
+        Supprimer définitivement
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex gap-2 p-3 rounded-xl" style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
+      <p className="text-xs flex-1" style={{ color: '#dc2626' }}>Supprimer définitivement ? Cette action est irréversible.</p>
+      <button onClick={() => setConfirm(false)} className="text-xs px-2" style={{ color: 'var(--muted2)' }}>Annuler</button>
+      <button
+        onClick={handleDelete}
+        disabled={loading}
+        className="text-xs px-3 py-1 rounded-lg font-semibold text-white"
+        style={{ background: '#dc2626' }}
+      >
+        {loading ? '…' : 'Supprimer'}
+      </button>
+    </div>
+  )
+}
+
 type Props = {
   lead: LeadRow
   onClose: () => void
   onLeadChanged: (changes: Partial<LeadRow>) => void
   onArchived: () => void
   onActionAdded: (action: Action) => void
+  onDeleted?: () => void
 }
 
-export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, onActionAdded }: Props) {
+export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, onActionAdded, onDeleted }: Props) {
   const [currentLead, setCurrentLead] = useState<LeadRow>(lead)
   const [saving, setSaving] = useState(false)
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
@@ -641,6 +680,11 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
             >
               Convertir en élève
             </button>
+          )}
+
+          {/* Supprimer définitivement (leads archivés uniquement) */}
+          {currentLead.archive && onDeleted && (
+            <DeleteButton leadId={currentLead.id} onDeleted={onDeleted} />
           )}
 
           {/* Archiver */}
