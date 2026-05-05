@@ -112,7 +112,7 @@ export default function ElevesClient({
                   : { background: 'var(--border)', color: 'var(--muted)' }}
               >
                 {todayCount > 0 && <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--accent)' }} />}
-                {todayCount}{' '}aujourd&apos;hui
+                {`${todayCount} aujourd'hui`}
               </span>
             </div>
           </div>
@@ -159,12 +159,12 @@ export default function ElevesClient({
               <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>À faire</span>
               {alerteCount > 0 && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
-                  ⚠ {alerteCount} élève{alerteCount > 1 ? 's' : ''} — CR manquant
+                  {`⚠ ${alerteCount} élève${alerteCount > 1 ? 's' : ''} — CR manquant`}
                 </span>
               )}
               {freezeCount > 0 && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
-                  ⏸ {freezeCount} élève{freezeCount > 1 ? 's' : ''} en freeze
+                  {`⏸ ${freezeCount} élève${freezeCount > 1 ? 's' : ''} en freeze`}
                 </span>
               )}
             </div>

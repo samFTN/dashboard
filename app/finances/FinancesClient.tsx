@@ -285,7 +285,7 @@ export default function FinancesClient({
                   : { background: 'var(--border)', color: 'var(--muted)' }}
               >
                 {todayCount > 0 && <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--accent)' }} />}
-                {todayCount}{' '}paiement{todayCount > 1 ? 's' : ''}{' '}aujourd&apos;hui
+                {`${todayCount} paiement${todayCount > 1 ? 's' : ''} aujourd'hui`}
               </span>
             </div>
           </div>
@@ -296,7 +296,7 @@ export default function FinancesClient({
           <div className="mb-6 rounded-2xl overflow-hidden" style={{ border: '1px solid #fecaca', background: '#fef2f2' }}>
             <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid #fecaca' }}>
               <span className="text-sm font-bold" style={{ color: '#dc2626' }}>
-                ⚠ {alertes.length} paiement{alertes.length > 1 ? 's' : ''} Stripe non reconnu{alertes.length > 1 ? 's' : ''}
+                {`⚠ ${alertes.length} paiement${alertes.length > 1 ? 's' : ''} Stripe non reconnu${alertes.length > 1 ? 's' : ''}`}
               </span>
             </div>
             <div className="divide-y" style={{ borderColor: '#fecaca' }}>

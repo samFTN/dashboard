@@ -148,7 +148,7 @@ export default async function HomePage() {
           {leads.aRelancer > 0 && (
             <Link href="/leads" className="flex items-center justify-between group">
               <span className="text-sm font-medium" style={{ color: '#dc2626' }}>
-                {leads.aRelancer} lead{leads.aRelancer > 1 ? 's' : ''} à relancer
+                {`${leads.aRelancer} lead${leads.aRelancer > 1 ? 's' : ''} à relancer`}
               </span>
               <span className="text-xs group-hover:underline" style={{ color: '#dc2626' }}>Voir →</span>
             </Link>
@@ -156,7 +156,7 @@ export default async function HomePage() {
           {leads.coursAujourdhui > 0 && (
             <Link href="/leads" className="flex items-center justify-between group">
               <span className="text-sm font-medium" style={{ color: '#b45309' }}>
-                {leads.coursAujourdhui} cours d&apos;essai aujourd&apos;hui
+                {`${leads.coursAujourdhui} cours d'essai aujourd'hui`}
               </span>
               <span className="text-xs group-hover:underline" style={{ color: '#b45309' }}>Voir →</span>
             </Link>
@@ -164,7 +164,7 @@ export default async function HomePage() {
           {finances.alertesPaiement > 0 && (
             <Link href="/finances" className="flex items-center justify-between group">
               <span className="text-sm font-medium" style={{ color: '#dc2626' }}>
-                {finances.alertesPaiement} paiement{finances.alertesPaiement > 1 ? 's' : ''} Stripe non reconnu{finances.alertesPaiement > 1 ? 's' : ''}
+                {`${finances.alertesPaiement} paiement${finances.alertesPaiement > 1 ? 's' : ''} Stripe non reconnu${finances.alertesPaiement > 1 ? 's' : ''}`}
               </span>
               <span className="text-xs group-hover:underline" style={{ color: '#dc2626' }}>Voir →</span>
             </Link>

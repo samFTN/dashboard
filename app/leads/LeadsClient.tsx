@@ -344,7 +344,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
             </h1>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-sm" style={{ color: 'var(--muted2)' }}>
-                {leads.length} lead{leads.length > 1 ? 's' : ''} {showArchived ? 'archivé' : 'actif'}{leads.length > 1 ? 's' : ''}
+                {`${leads.length} lead${leads.length > 1 ? 's' : ''} ${showArchived ? 'archivé' : 'actif'}${leads.length > 1 ? 's' : ''}`}
               </p>
               <span
                 className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
@@ -353,7 +353,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                   : { background: 'var(--border)', color: 'var(--muted)' }}
               >
                 {todayCount > 0 && <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--accent)' }} />}
-                {todayCount} aujourd&apos;hui
+                {`${todayCount} aujourd'hui`}
               </span>
             </div>
           </div>
@@ -416,7 +416,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                   ? { background: 'var(--accent)', color: 'white', border: '1px solid var(--accent)' }
                   : { background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent)' }}
               >
-                ✓ {actionItems.aFaireAujourdhui} aujourd&apos;hui
+                {`✓ ${actionItems.aFaireAujourdhui} aujourd'hui`}
               </button>
             )}
             {actionItems.aRelancer > 0 && (
@@ -426,7 +426,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
             )}
             {actionItems.coursAujourdhui > 0 && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' }}>
-                🎸 {actionItems.coursAujourdhui} cours d&apos;essai aujourd&apos;hui
+                {`🎸 ${actionItems.coursAujourdhui} cours d'essai aujourd'hui`}
               </span>
             )}
             {actionItems.sansPlan > 0 && (
