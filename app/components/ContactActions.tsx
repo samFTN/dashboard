@@ -27,9 +27,16 @@ const btnStyle: React.CSSProperties = {
 export function ContactActions({ email, telephone, style, className }: ContactActionsProps) {
   const [hovered, setHovered] = useState<'email' | 'phone' | null>(null)
   const [tapped, setTapped] = useState<'email' | 'phone' | null>(null)
+  const [copied, setCopied] = useState<'email' | 'phone' | null>(null)
 
   const showEmail = hovered === 'email' || tapped === 'email'
   const showPhone = hovered === 'phone' || tapped === 'phone'
+
+  function copy(value: string, key: 'email' | 'phone') {
+    navigator.clipboard.writeText(value)
+    setCopied(key)
+    setTimeout(() => setCopied(null), 1500)
+  }
 
   return (
     <div className={className} style={style}>
@@ -46,9 +53,17 @@ export function ContactActions({ email, telephone, style, className }: ContactAc
             {email}
           </span>
           {showEmail && (
-            <a href={`mailto:${email}`} style={btnStyle} onClick={e => e.stopPropagation()}>
-              ✉ Email
-            </a>
+            <>
+              <a href={`mailto:${email}`} style={btnStyle} onClick={e => e.stopPropagation()}>
+                ✉ Email
+              </a>
+              <button
+                style={{ ...btnStyle, color: copied === 'email' ? '#15803d' : 'var(--muted2)' }}
+                onClick={e => { e.stopPropagation(); copy(email, 'email') }}
+              >
+                {copied === 'email' ? '✓ Copié' : 'Copier'}
+              </button>
+            </>
           )}
         </div>
       )}
@@ -72,6 +87,12 @@ export function ContactActions({ email, telephone, style, className }: ContactAc
               <a href={`sms:${telephone}`} style={btnStyle} onClick={e => e.stopPropagation()}>
                 SMS
               </a>
+              <button
+                style={{ ...btnStyle, color: copied === 'phone' ? '#15803d' : 'var(--muted2)' }}
+                onClick={e => { e.stopPropagation(); copy(telephone, 'phone') }}
+              >
+                {copied === 'phone' ? '✓ Copié' : 'Copier'}
+              </button>
             </>
           )}
         </div>
