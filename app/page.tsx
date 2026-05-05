@@ -26,7 +26,7 @@ async function fetchAll() {
   const now = new Date()
   const debutMois = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
 
-  const [alertesLeads, pipeline, eleves, finances] = await Promise.all([
+  const [alertesLeads, pipeline, eleves, finances, actionsJour] = await Promise.all([
     // 1. Alertes leads
     pool.query(`
       SELECT
@@ -58,7 +58,16 @@ async function fetchAll() {
       FROM eleves
     `),
 
-    // 4. Finances mois courant
+    // 4. Actions du jour (retard inclus)
+    pool.query(`
+      SELECT id, nom, telephone, statut, prochaine_action_type, prochaine_action_date, prochaine_action_note
+      FROM leads
+      WHERE archive = false
+        AND prochaine_action_date::date <= CURRENT_DATE
+      ORDER BY prochaine_action_date ASC
+    `),
+
+    // 6. Finances mois courant
     pool.query(`
       SELECT
         COALESCE((
@@ -75,6 +84,7 @@ async function fetchAll() {
   const al = alertesLeads.rows[0]
   const el = eleves.rows[0]
   const fi = finances.rows[0]
+  const actions = actionsJour.rows
 
   const pipelineMap: Record<string, number> = {}
   for (const row of pipeline.rows) {
@@ -103,13 +113,17 @@ async function fetchAll() {
       resteAEncaisser: parseFloat(fi.reste_a_encaisser),
       alertesPaiement: Number(fi.alertes_paiement),
     },
+    actions,
     totalAlertes,
     dateLabel: now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),
   }
 }
 
+const ACTION_LABELS: Record<string, string> = { appel: 'Appel', sms: 'SMS', cours_essai: 'Cours d\'essai' }
+const ACTION_COLORS: Record<string, string> = { appel: '#1d4ed8', sms: '#15803d', cours_essai: '#d97706' }
+
 export default async function HomePage() {
-  const { leads, eleves, finances, totalAlertes, dateLabel } = await fetchAll()
+  const { leads, eleves, finances, actions, totalAlertes, dateLabel } = await fetchAll()
 
   const PIPELINE_STATUTS = ['qualifie', 'reserve', 'present']
 
@@ -157,6 +171,46 @@ export default async function HomePage() {
               <span className="text-xs group-hover:underline" style={{ color: '#dc2626' }}>Voir →</span>
             </Link>
           )}
+        </div>
+      )}
+
+      {/* Actions du jour */}
+      {actions.length > 0 && (
+        <div className="rounded-2xl mb-5 overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+          <div className="px-4 py-3" style={{ background: 'var(--card)', borderBottom: '1px solid var(--border)' }}>
+            <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+              Actions du jour · {actions.length}
+            </p>
+          </div>
+          <div className="divide-y" style={{ background: 'var(--card)', '--tw-divide-color': 'var(--border)' } as React.CSSProperties}>
+            {actions.map((a: { id: string; nom: string; telephone: string | null; statut: string; prochaine_action_type: string; prochaine_action_date: string; prochaine_action_note: string | null }) => {
+              const retard = new Date(a.prochaine_action_date) < new Date(new Date().toDateString())
+              return (
+                <Link key={a.id} href={`/leads?id=${a.id}`} className="flex items-center gap-3 px-4 py-3 hover:opacity-80 transition-opacity">
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                    style={{ background: ACTION_COLORS[a.prochaine_action_type] + '18', color: ACTION_COLORS[a.prochaine_action_type] }}
+                  >
+                    {ACTION_LABELS[a.prochaine_action_type]}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--dark)' }}>{a.nom}</p>
+                    {a.prochaine_action_note && (
+                      <p className="text-xs truncate" style={{ color: 'var(--muted)' }}>{a.prochaine_action_note}</p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    {a.telephone && (
+                      <p className="text-xs font-medium" style={{ color: 'var(--muted2)' }}>{a.telephone}</p>
+                    )}
+                    {retard && (
+                      <p className="text-[10px] font-semibold" style={{ color: '#dc2626' }}>En retard</p>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       )}
 
