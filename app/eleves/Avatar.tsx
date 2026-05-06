@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const COLORS = [
   '#d4a017', '#2563eb', '#16a34a', '#dc2626',
@@ -26,22 +26,23 @@ export default function Avatar({
   nom: string
   size?: number
 }) {
-  const [failed, setFailed] = useState(false)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
 
-  if (!failed) {
+  useEffect(() => {
+    const img = new Image()
+    img.onload = () => setPhotoUrl(gravatarUrl)
+    img.onerror = () => setPhotoUrl(null)
+    img.src = gravatarUrl
+  }, [gravatarUrl])
+
+  if (photoUrl) {
     return (
       <img
-        src={gravatarUrl}
+        src={photoUrl}
         alt=""
         width={size}
         height={size}
-        onError={() => setFailed(true)}
-        style={{
-          width: size, height: size,
-          borderRadius: '50%',
-          objectFit: 'cover',
-          flexShrink: 0,
-        }}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
       />
     )
   }
