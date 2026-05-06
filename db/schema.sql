@@ -4,6 +4,14 @@
 -- Idempotent : peut être rejoué sans erreur (CREATE TABLE IF NOT EXISTS)
 
 -- ------------------------------------------------------------
+-- SETTINGS (clé/valeur pour tokens et config)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+-- ------------------------------------------------------------
 -- PROFS
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS profs (
@@ -112,7 +120,10 @@ CREATE TABLE IF NOT EXISTS eleves (
   date_fin_reelle          DATE,
 
   -- Paiement Stripe (email utilisé sur Podia/Stripe, peut différer de email)
-  email_paiement           TEXT
+  email_paiement           TEXT,
+
+  -- Photo de profil (Google Contacts)
+  photo_url                TEXT
 );
 
 -- FK circulaire leads → eleves (ajoutée après création de eleves)

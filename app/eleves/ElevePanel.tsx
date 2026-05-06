@@ -627,7 +627,7 @@ export default function ElevePanel({
           position: 'sticky', top: 0, background: 'var(--card)', zIndex: 10,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Avatar gravatarUrl={eleve.gravatar_url} nom={eleve.nom} size={48} />
+            <Avatar photoUrl={eleve.photo_url} nom={eleve.nom} size={48} />
             <div>
               <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--dark)' }}>
                 {editMode ? editForm.nom || eleve.nom : eleve.nom}

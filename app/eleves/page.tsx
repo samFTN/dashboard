@@ -1,11 +1,6 @@
-import crypto from 'crypto'
 import pool from '@/lib/db'
+import { isGoogleConnected } from '@/lib/google'
 import ElevesClient from './ElevesClient'
-
-function gravatarUrl(email: string, size = 64) {
-  const hash = crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex')
-  return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404`
-}
 
 export const dynamic = 'force-dynamic'
 
@@ -28,7 +23,7 @@ async function fetchEleves(actif: boolean) {
       e.semaines_freeze_consommees, e.freeze_actif,
       e.objectifs, e.notes, e.points_total,
       e.lead_id::text, e.prof_dedie_id,
-      e.created_at,
+      e.created_at, e.photo_url,
       COUNT(s.id)::int                                     AS nb_seances_realisees,
       COALESCE(BOOL_OR(s.alerte_decrochage), false)        AS has_alerte,
       (
@@ -47,15 +42,15 @@ async function fetchEleves(actif: boolean) {
     ORDER BY e.date_debut DESC`,
     [actif]
   )
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return rows.map((r: any) => ({ ...r, gravatar_url: gravatarUrl(r.email as string) }))
+  return rows
 }
 
 export default async function ElevesPage() {
-  const [actifs, anciens, todayCount] = await Promise.all([
+  const [actifs, anciens, todayCount, googleConnected] = await Promise.all([
     fetchEleves(true),
     fetchEleves(false),
     fetchTodayCount(),
+    isGoogleConnected(),
   ])
-  return <ElevesClient initialActifs={actifs} initialAnciens={anciens} todayCount={todayCount} />
+  return <ElevesClient initialActifs={actifs} initialAnciens={anciens} todayCount={todayCount} googleConnected={googleConnected} />
 }

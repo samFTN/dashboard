@@ -18,22 +18,24 @@ function colorFor(nom: string) {
 }
 
 export default function Avatar({
-  gravatarUrl,
+  photoUrl: dbPhotoUrl,
   nom,
   size = 32,
 }: {
-  gravatarUrl: string
+  photoUrl: string | null
   nom: string
   size?: number
 }) {
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(dbPhotoUrl ?? null)
 
   useEffect(() => {
-    const img = new Image()
-    img.onload = () => setPhotoUrl(gravatarUrl)
-    img.onerror = () => setPhotoUrl(null)
-    img.src = gravatarUrl
-  }, [gravatarUrl])
+    // If we already have a DB photo, use it directly without probing
+    if (dbPhotoUrl) {
+      setPhotoUrl(dbPhotoUrl)
+      return
+    }
+    setPhotoUrl(null)
+  }, [dbPhotoUrl])
 
   if (photoUrl) {
     return (

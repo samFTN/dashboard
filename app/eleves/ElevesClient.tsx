@@ -31,7 +31,7 @@ export type EleveRow = {
   nb_seances_realisees: number
   has_alerte: boolean
   satisfaction_moyenne: number | null
-  gravatar_url: string
+  photo_url: string | null
 }
 
 function satisfactionColor(val: number | null) {
@@ -65,16 +65,35 @@ export default function ElevesClient({
   initialActifs,
   initialAnciens,
   todayCount,
+  googleConnected,
 }: {
   initialActifs: EleveRow[]
   initialAnciens: EleveRow[]
   todayCount: number
+  googleConnected: boolean
 }) {
   const [tab, setTab] = useState<'actifs' | 'anciens'>('actifs')
   const [actifs, setActifs] = useState<EleveRow[]>(initialActifs)
   const [anciens, setAnciens] = useState<EleveRow[]>(initialAnciens)
   const [selected, setSelected] = useState<EleveRow | null>(null)
   const [showImport, setShowImport] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
+
+  async function syncPhotos() {
+    setSyncing(true)
+    setSyncMsg(null)
+    try {
+      const res = await fetch('/api/auth/google/sync-photos', { method: 'POST' })
+      const data = await res.json() as { updated: number; total: number }
+      setSyncMsg(`${data.updated} photo${data.updated > 1 ? 's' : ''} récupérée${data.updated > 1 ? 's' : ''} sur ${data.total} élève${data.total > 1 ? 's' : ''}`)
+      if (data.updated > 0) window.location.reload()
+    } catch {
+      setSyncMsg('Erreur lors de la synchronisation')
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const list = tab === 'actifs' ? actifs : anciens
 
@@ -118,13 +137,36 @@ export default function ElevesClient({
               </span>
             </div>
           </div>
-          <button
-            onClick={() => setShowImport(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ background: 'var(--dark)', color: 'white' }}
-          >
-            <span>↑</span> Importer CSV
-          </button>
+          <div className="flex items-center gap-2">
+            {!googleConnected ? (
+              <a
+                href="/api/auth/google"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+                style={{ background: '#4285f4', color: 'white' }}
+              >
+                Connecter Google
+              </a>
+            ) : (
+              <button
+                onClick={syncPhotos}
+                disabled={syncing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+                style={{ background: '#4285f4', color: 'white', opacity: syncing ? 0.6 : 1 }}
+              >
+                {syncing ? 'Sync…' : '↻ Photos Google'}
+              </button>
+            )}
+            {syncMsg && (
+              <span className="text-xs" style={{ color: 'var(--muted)' }}>{syncMsg}</span>
+            )}
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+              style={{ background: 'var(--dark)', color: 'white' }}
+            >
+              <span>↑</span> Importer CSV
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -222,7 +264,7 @@ export default function ElevesClient({
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Avatar gravatarUrl={e.gravatar_url} nom={e.nom} size={32} />
+                        <Avatar photoUrl={e.photo_url} nom={e.nom} size={32} />
                         <div>
                           <p className="font-semibold" style={{ color: 'var(--dark)' }}>{e.nom}</p>
                           {e.freeze_actif && (
