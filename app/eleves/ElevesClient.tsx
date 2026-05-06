@@ -155,6 +155,13 @@ export default function ElevesClient({
               >
                 {syncing ? 'Sync…' : '↻ Photos Google'}
               </button>
+              <a
+                href="/api/auth/google/disconnect"
+                className="text-xs px-2 py-1 rounded-lg transition-opacity hover:opacity-70"
+                style={{ color: 'var(--muted)', border: '1px solid var(--border)' }}
+              >
+                Déconnecter
+              </a>
             )}
             {syncMsg && (
               <span className="text-xs" style={{ color: 'var(--muted)' }}>{syncMsg}</span>
