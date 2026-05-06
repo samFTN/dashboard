@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { EleveRow } from './ElevesClient'
 import { ContactActions } from '@/app/components/ContactActions'
-import Avatar from './Avatar'
 
 type VoletProf = {
   presence: boolean
@@ -626,18 +625,15 @@ export default function ElevePanel({
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
           position: 'sticky', top: 0, background: 'var(--card)', zIndex: 10,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Avatar photoUrl={eleve.photo_url} nom={eleve.nom} size={48} />
-            <div>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--dark)' }}>
-                {editMode ? editForm.nom || eleve.nom : eleve.nom}
-              </h2>
-              <ContactActions
-                email={eleve.email}
-                telephone={eleve.telephone ?? undefined}
-                style={{ marginTop: 4 }}
-              />
-            </div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--dark)' }}>
+              {editMode ? editForm.nom || eleve.nom : eleve.nom}
+            </h2>
+            <ContactActions
+              email={eleve.email}
+              telephone={eleve.telephone ?? undefined}
+              style={{ marginTop: 4 }}
+            />
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {!editMode && eleve.actif && (

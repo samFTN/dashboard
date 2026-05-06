@@ -1,5 +1,4 @@
 import pool from '@/lib/db'
-import { isGoogleConnected } from '@/lib/google'
 import ElevesClient from './ElevesClient'
 
 export const dynamic = 'force-dynamic'
@@ -23,7 +22,7 @@ async function fetchEleves(actif: boolean) {
       e.semaines_freeze_consommees, e.freeze_actif,
       e.objectifs, e.notes, e.points_total,
       e.lead_id::text, e.prof_dedie_id,
-      e.created_at, e.photo_url,
+      e.created_at,
       COUNT(s.id)::int                                     AS nb_seances_realisees,
       COALESCE(BOOL_OR(s.alerte_decrochage), false)        AS has_alerte,
       (
@@ -46,11 +45,10 @@ async function fetchEleves(actif: boolean) {
 }
 
 export default async function ElevesPage() {
-  const [actifs, anciens, todayCount, googleConnected] = await Promise.all([
+  const [actifs, anciens, todayCount] = await Promise.all([
     fetchEleves(true),
     fetchEleves(false),
     fetchTodayCount(),
-    isGoogleConnected(),
   ])
-  return <ElevesClient initialActifs={actifs} initialAnciens={anciens} todayCount={todayCount} googleConnected={googleConnected} />
+  return <ElevesClient initialActifs={actifs} initialAnciens={anciens} todayCount={todayCount} />
 }
