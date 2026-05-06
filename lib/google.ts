@@ -69,7 +69,7 @@ export async function getGooglePhotoForEmail(email: string): Promise<string | nu
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     if (!res.ok) continue
     const data = await res.json() as { results?: Array<{ person?: { photos?: Array<{ url: string; default?: boolean }> } }> }
-    const photo = data.results?.[0]?.person?.photos?.[0]
+    const photo = data.results?.[0]?.person?.photos?.find(p => !p.default)
     if (photo?.url) return photo.url
   }
 
