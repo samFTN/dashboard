@@ -1,5 +1,11 @@
+import crypto from 'crypto'
 import pool from '@/lib/db'
 import ElevesClient from './ElevesClient'
+
+function gravatarUrl(email: string, size = 64) {
+  const hash = crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex')
+  return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404`
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +47,8 @@ async function fetchEleves(actif: boolean) {
     ORDER BY e.date_debut DESC`,
     [actif]
   )
-  return rows
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return rows.map((r: any) => ({ ...r, gravatar_url: gravatarUrl(r.email as string) }))
 }
 
 export default async function ElevesPage() {

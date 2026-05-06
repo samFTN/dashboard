@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import ElevePanel from './ElevePanel'
 import ImportCSVModal from './ImportCSVModal'
+import Avatar from './Avatar'
 
 export type EleveRow = {
   id: string
@@ -30,6 +31,7 @@ export type EleveRow = {
   nb_seances_realisees: number
   has_alerte: boolean
   satisfaction_moyenne: number | null
+  gravatar_url: string
 }
 
 function satisfactionColor(val: number | null) {
@@ -219,15 +221,20 @@ export default function ElevesClient({
                     }}
                   >
                     <td className="px-4 py-3">
-                      <p className="font-semibold" style={{ color: 'var(--dark)' }}>{e.nom}</p>
-                      {e.freeze_actif && (
-                        <span
-                          className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold mt-0.5"
-                          style={{ background: '#eff6ff', color: '#2563eb' }}
-                        >
-                          FREEZE
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <Avatar gravatarUrl={e.gravatar_url} nom={e.nom} size={32} />
+                        <div>
+                          <p className="font-semibold" style={{ color: 'var(--dark)' }}>{e.nom}</p>
+                          {e.freeze_actif && (
+                            <span
+                              className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold mt-0.5"
+                              style={{ background: '#eff6ff', color: '#2563eb' }}
+                            >
+                              FREEZE
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
                       {e.formule_label}
