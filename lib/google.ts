@@ -54,12 +54,12 @@ async function getAccessToken(): Promise<string | null> {
   return data.access_token ?? null
 }
 
-// Returns the photo URL (non-default) for a given email, or null
+// Returns a base64 data URL of the person's photo, or null
+// Downloads server-side with auth token so the image is accessible without session
 export async function getGooglePhotoForEmail(email: string): Promise<string | null> {
   const token = await getAccessToken()
   if (!token) return null
 
-  // Search in "other contacts" first (people you emailed but didn't add explicitly)
   const endpoints = [
     `https://people.googleapis.com/v1/otherContacts:search?query=${encodeURIComponent(email)}&readMask=photos`,
     `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(email)}&readMask=photos`,
@@ -69,8 +69,16 @@ export async function getGooglePhotoForEmail(email: string): Promise<string | nu
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     if (!res.ok) continue
     const data = await res.json() as { results?: Array<{ person?: { photos?: Array<{ url: string; default?: boolean }> } }> }
-    const photo = data.results?.[0]?.person?.photos?.[0]
-    if (photo?.url) return photo.url
+    const photoUrl = data.results?.[0]?.person?.photos?.[0]?.url
+    if (!photoUrl) continue
+
+    // Download the image with the auth token (required for lh3.googleusercontent.com/cm/ URLs)
+    const imgRes = await fetch(photoUrl, { headers: { Authorization: `Bearer ${token}` } })
+    if (!imgRes.ok) continue
+    const buffer = await imgRes.arrayBuffer()
+    const contentType = imgRes.headers.get('content-type') ?? 'image/jpeg'
+    const base64 = Buffer.from(buffer).toString('base64')
+    return `data:${contentType};base64,${base64}`
   }
 
   return null
