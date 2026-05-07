@@ -68,7 +68,7 @@ function timeAgo(iso: string | null): string {
   const d = Math.round((today.getTime() - contactDay.getTime()) / 86_400_000)
   if (d < 0) return '—'
   if (d === 0) return "auj."
-  if (d === 1) return 'hier'
+  if (d === 1) return '1j'
   if (d < 7) return `${d}j`
   if (d < 30) return `${Math.floor(d / 7)} sem.`
   return fmt(iso)
