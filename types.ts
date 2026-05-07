@@ -21,7 +21,7 @@ export type LeadRaisonArchivage =
 
 export type LeadSource = 'pub_meta' | 'organique'
 
-export type ActionType = 'appel' | 'sms' | 'cours_essai'
+export type ActionType = 'appel' | 'sms' | 'whatsapp' | 'cours_essai'
 
 export type ModePaiement = 'cb_2x' | 'cb_3x' | 'cb_4x' | 'paypal_4x'
 

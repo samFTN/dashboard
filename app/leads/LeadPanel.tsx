@@ -18,6 +18,7 @@ const STATUT_LABELS: Record<string, string> = {
 const ACTION_LABELS: Record<string, string> = {
   appel: 'Appel',
   sms: 'SMS',
+  whatsapp: 'WhatsApp',
   cours_essai: "Cours d'essai",
 }
 
@@ -485,6 +486,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                   >
                     <option value="appel">Appel</option>
                     <option value="sms">SMS</option>
+                    <option value="whatsapp">WhatsApp</option>
                     <option value="cours_essai">Cours d'essai</option>
                   </select>
                   <input
@@ -628,6 +630,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                   >
                     <option value="appel">Appel</option>
                     <option value="sms">SMS</option>
+                    <option value="whatsapp">WhatsApp</option>
                     <option value="cours_essai">Cours d'essai</option>
                   </select>
                   <input

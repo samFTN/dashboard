@@ -93,6 +93,15 @@ export function ContactActions({ email, telephone, style, className }: ContactAc
               <a href={`sms:${telephone}`} style={btnStyle} onClick={e => e.stopPropagation()}>
                 SMS
               </a>
+              <a
+                href={`https://wa.me/${telephone.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '33')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ ...btnStyle, color: '#25D366' }}
+                onClick={e => e.stopPropagation()}
+              >
+                WhatsApp
+              </a>
               <button
                 style={{ ...btnStyle, color: copied === 'phone' ? '#15803d' : 'var(--muted2)' }}
                 onClick={e => { e.stopPropagation(); copy(telephone, 'phone') }}
