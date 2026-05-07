@@ -11,7 +11,7 @@ const LEADS_QUERY = `
     l.tranche_age, l.objectifs, l.problemes, l.questionnaire,
     l.eleve_id::text,
     l.created_at, l.updated_at,
-    MAX(ac.date) FILTER (WHERE ac.date <= CURRENT_DATE) AS dernier_contact_date,
+    MAX(CASE WHEN ac.date <= NOW() THEN ac.date ELSE NULL END) AS dernier_contact_date,
     COALESCE(
       json_agg(
         json_build_object(
