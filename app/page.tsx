@@ -36,7 +36,8 @@ async function fetchAll() {
         COUNT(CASE WHEN prochaine_action_type = 'cours_essai'
                    AND prochaine_action_date::date = CURRENT_DATE THEN 1 END)::int AS cours_aujourd_hui,
         COUNT(CASE WHEN prochaine_action_date IS NULL
-                   AND statut IN ('qualifie','reserve','present') THEN 1 END)::int AS sans_plan,
+                   AND statut IN ('qualifie','present')
+                   OR (prochaine_action_date IS NULL AND statut = 'reserve' AND cours_essai_date IS NULL) THEN 1 END)::int AS sans_plan,
         COUNT(*)::int AS total_actifs,
         COUNT(CASE WHEN created_at::date = CURRENT_DATE THEN 1 END)::int AS nouveaux_aujourd_hui
       FROM leads WHERE archive = false
