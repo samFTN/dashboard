@@ -298,7 +298,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
   function handleActionAdded(action: LeadRow['journal'][0]) {
     const changes: Partial<LeadRow> = {
       journal: [action, ...(selectedLead?.journal ?? [])],
-      dernier_contact_date: action.date,
+      dernier_contact_date: action.date <= new Date().toISOString().slice(0, 10) ? action.date : selectedLead?.dernier_contact_date ?? null,
     }
     handleLeadChanged(changes)
   }
