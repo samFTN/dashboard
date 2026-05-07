@@ -63,7 +63,9 @@ function fmt(iso: string | null): string {
 
 function timeAgo(iso: string | null): string {
   if (!iso) return '—'
-  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const contactDay = new Date(iso); contactDay.setHours(0, 0, 0, 0)
+  const d = Math.round((today.getTime() - contactDay.getTime()) / 86_400_000)
   if (d < 0) return '—'
   if (d === 0) return "auj."
   if (d === 1) return 'hier'
