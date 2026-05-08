@@ -513,6 +513,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                           type="time"
                           value={prochaineForm.heure}
                           onChange={e => setProchaineForm(p => ({ ...p, heure: e.target.value }))}
+                          step={900}
                           style={{ ...inputStyle, width: '6rem' }}
                           autoFocus
                         />
