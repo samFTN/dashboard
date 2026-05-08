@@ -105,16 +105,18 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
   const [showActionForm, setShowActionForm] = useState(false)
   const [actionForm, setActionForm] = useState({ type: 'appel', date: todayIso(), note: '' })
   const [showProchaineForm, setShowProchaineForm] = useState(false)
+  const initHeure = (() => {
+    if (!currentLead.prochaine_action_date) return ''
+    const t = parisTimeStr(currentLead.prochaine_action_date)
+    return t !== '00:00' ? t : ''
+  })()
   const [prochaineForm, setProchaineForm] = useState({
     type: currentLead.prochaine_action_type ?? 'appel',
     date: currentLead.prochaine_action_date ? parisDateStr(currentLead.prochaine_action_date) : '',
-    heure: (() => {
-      if (!currentLead.prochaine_action_date) return ''
-      const t = parisTimeStr(currentLead.prochaine_action_date)
-      return t !== '00:00' ? t : ''
-    })(),
+    heure: initHeure,
     note: currentLead.prochaine_action_note ?? '',
   })
+  const [showHeure, setShowHeure] = useState(!!initHeure)
   const [error, setError] = useState<string | null>(null)
   const [showConvertModal, setShowConvertModal] = useState(false)
   const [formules, setFormules] = useState<Formule[]>([])
@@ -507,12 +509,24 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                       onChange={e => setProchaineForm(p => ({ ...p, date: e.target.value }))}
                       style={{ ...inputStyle, flex: 1, minWidth: 0 }}
                     />
-                    <input
-                      type="time"
-                      value={prochaineForm.heure}
-                      onChange={e => setProchaineForm(p => ({ ...p, heure: e.target.value }))}
-                      style={{ ...inputStyle, width: '6rem', opacity: prochaineForm.heure ? 1 : 0.4 }}
-                    />
+                    {showHeure ? (
+                      <input
+                        type="time"
+                        value={prochaineForm.heure}
+                        onChange={e => setProchaineForm(p => ({ ...p, heure: e.target.value }))}
+                        style={{ ...inputStyle, width: '6rem' }}
+                        autoFocus
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowHeure(true)}
+                        className="text-xs px-2 rounded-lg"
+                        style={{ border: '1.5px dashed var(--border)', color: 'var(--muted)', whiteSpace: 'nowrap' }}
+                      >
+                        + heure
+                      </button>
+                    )}
                   </div>
                 </div>
                 <input
@@ -524,7 +538,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                 />
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setShowProchaineForm(false)}
+                    onClick={() => { setShowProchaineForm(false); setShowHeure(!!initHeure) }}
                     className="flex-1 py-1.5 text-xs rounded-lg font-medium"
                     style={{ border: '1.5px solid var(--border)', color: 'var(--muted2)' }}
                   >
