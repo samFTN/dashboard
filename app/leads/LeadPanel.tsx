@@ -183,9 +183,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
       const body = prochaineForm.date
         ? {
             prochaine_action_type: prochaineForm.type,
-            prochaine_action_date: prochaineForm.heure
-              ? new Date(`${prochaineForm.date}T${prochaineForm.heure}`).toISOString()
-              : prochaineForm.date,
+            prochaine_action_date: new Date(`${prochaineForm.date}T${prochaineForm.heure || '00:00'}`).toISOString(),
             prochaine_action_note: prochaineForm.note || null,
           }
         : {
