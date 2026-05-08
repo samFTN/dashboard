@@ -509,14 +509,26 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                     />
                     {showHeure ? (
                       <div className="flex gap-1 items-center">
-                        <input
-                          type="time"
-                          value={prochaineForm.heure}
-                          onChange={e => setProchaineForm(p => ({ ...p, heure: e.target.value }))}
-                          step={900}
-                          style={{ ...inputStyle, width: '6rem' }}
+                        <select
+                          value={prochaineForm.heure.split(':')[0] ?? '09'}
+                          onChange={e => setProchaineForm(p => ({ ...p, heure: `${e.target.value}:${p.heure.split(':')[1] ?? '00'}` }))}
+                          style={{ ...inputStyle, width: '3.5rem' }}
                           autoFocus
-                        />
+                        >
+                          {Array.from({ length: 17 }, (_, i) => i + 6).map(h => (
+                            <option key={h} value={String(h).padStart(2, '0')}>{String(h).padStart(2, '0')}</option>
+                          ))}
+                        </select>
+                        <span className="text-xs" style={{ color: 'var(--muted)' }}>:</span>
+                        <select
+                          value={prochaineForm.heure.split(':')[1] ?? '00'}
+                          onChange={e => setProchaineForm(p => ({ ...p, heure: `${p.heure.split(':')[0] ?? '09'}:${e.target.value}` }))}
+                          style={{ ...inputStyle, width: '3.5rem' }}
+                        >
+                          {['00', '15', '30', '45'].map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
                         <button
                           type="button"
                           onClick={() => { setProchaineForm(p => ({ ...p, heure: '' })); setShowHeure(false) }}
