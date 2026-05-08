@@ -508,7 +508,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
                       {timeAgo(lead.dernier_contact_date)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-center">
                       {(() => {
                         const actionType = lead.prochaine_action_type
                           ?? (lead.statut === 'reserve' && lead.cours_essai_date ? 'cours_essai' : null)
