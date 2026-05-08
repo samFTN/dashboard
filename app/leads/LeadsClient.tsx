@@ -453,7 +453,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                 {['Nom', 'Statut', 'Source', 'Entrée', 'Dernier contact', 'Prochaine action'].map(col => (
                   <th
                     key={col}
-                    className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider"
+                    className={`px-4 py-3 text-[10px] font-bold uppercase tracking-wider ${col === 'Prochaine action' ? 'text-center' : 'text-left'}`}
                     style={{ color: 'var(--muted2)' }}
                   >
                     {col}
