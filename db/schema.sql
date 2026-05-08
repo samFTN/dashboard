@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS leads (
   cours_essai_fait  BOOLEAN NOT NULL DEFAULT FALSE,
 
   -- Prochaine action (dénormalisé pour perf liste)
-  prochaine_action_type TEXT CHECK (prochaine_action_type IN ('appel','sms','cours_essai')),
+  prochaine_action_type TEXT CHECK (prochaine_action_type IN ('appel','sms','whatsapp','cours_essai','cours_offert')),
   prochaine_action_date TIMESTAMPTZ,
   prochaine_action_note TEXT,
 

@@ -517,7 +517,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                         return actionType ? (
                           <>
                             <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
-                              {actionType === 'cours_essai' ? "Cours d'essai" : actionType.toUpperCase()}
+                              {({'cours_essai': "Cours d'essai", 'cours_offert': 'Cours offert', 'whatsapp': 'WhatsApp'} as Record<string,string>)[actionType] ?? actionType.toUpperCase()}
                             </p>
                             <p className="text-xs" style={{ color: 'var(--muted2)' }}>
                               {fmt(actionDate)}
