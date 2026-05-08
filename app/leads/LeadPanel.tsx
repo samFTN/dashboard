@@ -107,7 +107,12 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
   const [showProchaineForm, setShowProchaineForm] = useState(false)
   const [prochaineForm, setProchaineForm] = useState({
     type: currentLead.prochaine_action_type ?? 'appel',
-    date: currentLead.prochaine_action_date?.slice(0, 10) ?? '',
+    date: currentLead.prochaine_action_date ? parisDateStr(currentLead.prochaine_action_date) : '',
+    heure: (() => {
+      if (!currentLead.prochaine_action_date) return ''
+      const t = parisTimeStr(currentLead.prochaine_action_date)
+      return t !== '00:00' ? t : ''
+    })(),
     note: currentLead.prochaine_action_note ?? '',
   })
   const [error, setError] = useState<string | null>(null)
@@ -176,7 +181,9 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
       const body = prochaineForm.date
         ? {
             prochaine_action_type: prochaineForm.type,
-            prochaine_action_date: prochaineForm.date,
+            prochaine_action_date: prochaineForm.heure
+              ? new Date(`${prochaineForm.date}T${prochaineForm.heure}`).toISOString()
+              : prochaineForm.date,
             prochaine_action_note: prochaineForm.note || null,
           }
         : {
@@ -429,6 +436,10 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                     </span>
                     <span className="text-sm ml-2" style={{ color: 'var(--muted2)' }}>
                       le {fmt(currentLead.prochaine_action_date)}
+                      {currentLead.prochaine_action_date && (() => {
+                        const t = parisTimeStr(currentLead.prochaine_action_date)
+                        return t !== '00:00' ? <span className="ml-1" style={{ color: 'var(--muted)' }}>à {t}</span> : null
+                      })()}
                     </span>
                     {currentLead.prochaine_action_note && (
                       <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
@@ -489,12 +500,20 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                     <option value="whatsapp">WhatsApp</option>
                     <option value="cours_essai">Cours d'essai</option>
                   </select>
-                  <input
-                    type="date"
-                    value={prochaineForm.date}
-                    onChange={e => setProchaineForm(p => ({ ...p, date: e.target.value }))}
-                    style={inputStyle}
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      type="date"
+                      value={prochaineForm.date}
+                      onChange={e => setProchaineForm(p => ({ ...p, date: e.target.value }))}
+                      style={{ ...inputStyle, flex: 1, minWidth: 0 }}
+                    />
+                    <input
+                      type="time"
+                      value={prochaineForm.heure}
+                      onChange={e => setProchaineForm(p => ({ ...p, heure: e.target.value }))}
+                      style={{ ...inputStyle, width: '6rem', opacity: prochaineForm.heure ? 1 : 0.4 }}
+                    />
+                  </div>
                 </div>
                 <input
                   type="text"

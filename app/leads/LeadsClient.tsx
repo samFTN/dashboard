@@ -521,6 +521,11 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                             </p>
                             <p className="text-xs" style={{ color: 'var(--muted2)' }}>
                               {fmt(actionDate)}
+                              {actionDate && (() => {
+                                const d = new Date(actionDate)
+                                const t = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
+                                return t !== '00:00' ? <span className="ml-1" style={{ color: 'var(--muted)' }}>à {t}</span> : null
+                              })()}
                             </p>
                           </>
                         ) : (
