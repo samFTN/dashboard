@@ -453,7 +453,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                 {['Nom', 'Statut', 'Source', 'Entrée', 'Dernier contact', 'Prochaine action'].map(col => (
                   <th
                     key={col}
-                    className={`px-4 py-3 text-[10px] font-bold uppercase tracking-wider ${col === 'Prochaine action' ? 'text-center' : 'text-left'}`}
+                    className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider"
                     style={{ color: 'var(--muted2)' }}
                   >
                     {col}
@@ -508,7 +508,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
                       {timeAgo(lead.dernier_contact_date)}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3">
                       {(() => {
                         const actionType = lead.prochaine_action_type
                           ?? (lead.statut === 'reserve' && lead.cours_essai_date ? 'cours_essai' : null)
