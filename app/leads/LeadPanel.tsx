@@ -510,13 +510,24 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                       style={{ ...inputStyle, flex: 1, minWidth: 0 }}
                     />
                     {showHeure ? (
-                      <input
-                        type="time"
-                        value={prochaineForm.heure}
-                        onChange={e => setProchaineForm(p => ({ ...p, heure: e.target.value }))}
-                        style={{ ...inputStyle, width: '6rem' }}
-                        autoFocus
-                      />
+                      <div className="flex gap-1 items-center">
+                        <input
+                          type="time"
+                          value={prochaineForm.heure}
+                          onChange={e => setProchaineForm(p => ({ ...p, heure: e.target.value }))}
+                          style={{ ...inputStyle, width: '6rem' }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setProchaineForm(p => ({ ...p, heure: '' })); setShowHeure(false) }}
+                          className="text-xs"
+                          style={{ color: 'var(--muted)', lineHeight: 1 }}
+                          title="Retirer l'heure"
+                        >
+                          ×
+                        </button>
+                      </div>
                     ) : (
                       <button
                         type="button"
