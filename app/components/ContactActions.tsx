@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface ContactActionsProps {
   email?: string
@@ -28,6 +28,11 @@ export function ContactActions({ email, telephone, style, className }: ContactAc
   const [hovered, setHovered] = useState<'email' | 'phone' | null>(null)
   const [tapped, setTapped] = useState<'email' | 'phone' | null>(null)
   const [copied, setCopied] = useState<'email' | 'phone' | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    setIsMobile(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))
+  }, [])
 
   const showEmail = hovered === 'email' || tapped === 'email'
   const showPhone = hovered === 'phone' || tapped === 'phone'
@@ -55,7 +60,10 @@ export function ContactActions({ email, telephone, style, className }: ContactAc
           {showEmail && (
             <>
               <a
-                href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}`}
+                href={isMobile
+                  ? `mailto:${email}`
+                  : `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}&from=${encodeURIComponent('samuel@guitarisation.fr')}`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 style={btnStyle}
