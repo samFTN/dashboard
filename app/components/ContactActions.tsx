@@ -30,8 +30,12 @@ export function ContactActions({ email, telephone, style, className }: ContactAc
   const [copied, setCopied] = useState<'email' | 'phone' | null>(null)
   const [isMobile, setIsMobile] = useState(false)
 
+  const [isIOS, setIsIOS] = useState(false)
+
   useEffect(() => {
-    setIsMobile(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))
+    const ua = navigator.userAgent
+    setIsMobile(/Mobi|Android|iPhone|iPad/i.test(ua))
+    setIsIOS(/iPhone|iPad|iPod/i.test(ua))
   }, [])
 
   const showEmail = hovered === 'email' || tapped === 'email'
@@ -60,9 +64,11 @@ export function ContactActions({ email, telephone, style, className }: ContactAc
           {showEmail && (
             <>
               <a
-                href={isMobile
-                  ? `mailto:${email}`
-                  : `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}&from=${encodeURIComponent('samuel@guitarisation.fr')}`
+                href={isIOS
+                  ? `googlegmail://co?to=${encodeURIComponent(email)}`
+                  : isMobile
+                    ? `mailto:${email}`
+                    : `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}&from=${encodeURIComponent('samuel@guitarisation.fr')}`
                 }
                 target="_blank"
                 rel="noopener noreferrer"
