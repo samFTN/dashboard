@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
 
-const RAISONS = ['non_qualifie', 'sans_reponse', 'abandon']
+const RAISONS = ['non_qualifie', 'sans_reponse', 'abandon', 'budget']
 
 export async function POST(
   req: NextRequest,
