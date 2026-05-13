@@ -749,8 +749,8 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
             <DeleteButton leadId={currentLead.id} onDeleted={onDeleted} />
           )}
 
-          {/* Archiver */}
-          {!showArchiveConfirm ? (
+          {/* Archiver (uniquement si le lead n'est pas déjà archivé) */}
+          {!currentLead.archive && (!showArchiveConfirm ? (
             <button
               onClick={() => setShowArchiveConfirm(true)}
               className="w-full py-2 rounded-xl text-sm font-medium"
@@ -789,7 +789,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                 </button>
               </div>
             </div>
-          )}
+          ))}
         </div>
       </div>
       {/* Modal conversion en élève */}
