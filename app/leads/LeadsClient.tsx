@@ -38,10 +38,10 @@ export type LeadRow = {
 
 const STATUT_LABELS: Record<string, string> = {
   non_qualifie:  'Non qualifié',
-  qualifie:      'Qualifié',
-  reserve:       'Réservé',
-  present:       'Présent',
-  eleve:         'Élève',
+  qualifie:      '1. Qualifié',
+  reserve:       '2. Réservé',
+  present:       '3. Présent',
+  eleve:         '4. Élève',
   ancien_eleve:  'Ancien élève',
 }
 

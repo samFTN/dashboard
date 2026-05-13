@@ -8,10 +8,10 @@ type Formule = { id: string; label: string; duree_mois: number }
 
 const STATUT_LABELS: Record<string, string> = {
   non_qualifie: 'Non qualifié',
-  qualifie: 'Qualifié',
-  reserve: 'Réservé',
-  present: 'Présent',
-  eleve: 'Élève',
+  qualifie: '1. Qualifié',
+  reserve: '2. Réservé',
+  present: '3. Présent',
+  eleve: '4. Élève',
   ancien_eleve: 'Ancien élève',
 }
 
@@ -361,10 +361,10 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                 style={{ ...inputStyle, cursor: 'pointer' }}
               >
                 <option value="non_qualifie">Non qualifié</option>
-                <option value="qualifie">Qualifié</option>
-                <option value="reserve">Réservé</option>
-                <option value="present">Présent</option>
-                <option value="eleve">Élève</option>
+                <option value="qualifie">1. Qualifié</option>
+                <option value="reserve">2. Réservé</option>
+                <option value="present">3. Présent</option>
+                <option value="eleve">4. Élève</option>
               </select>
             </div>
             <div>
