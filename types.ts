@@ -18,10 +18,11 @@ export type LeadRaisonArchivage =
   | 'non_qualifie'   // questionnaire éliminatoire
   | 'sans_reponse'   // relances épuisées
   | 'abandon'        // a participé mais a choisi de ne pas continuer
+  | 'budget'         // budget insuffisant ou inadapté
 
 export type LeadSource = 'pub_meta' | 'organique'
 
-export type ActionType = 'appel' | 'sms' | 'whatsapp' | 'cours_essai'
+export type ActionType = 'appel' | 'sms' | 'whatsapp' | 'cours_essai' | 'temoignage'
 
 export type ModePaiement = 'cb_2x' | 'cb_3x' | 'cb_4x' | 'paypal_4x'
 

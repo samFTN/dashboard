@@ -21,6 +21,7 @@ const ACTION_LABELS: Record<string, string> = {
   whatsapp: 'WhatsApp',
   cours_essai: "Cours d'essai",
   cours_offert: 'Cours offert',
+  temoignage: 'Témoignage',
 }
 
 const TRANCHE_LABELS: Record<string, string> = {
@@ -501,6 +502,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                     <option value="whatsapp">WhatsApp</option>
                     <option value="cours_essai">Cours d'essai</option>
                     <option value="cours_offert">Cours offert</option>
+                    <option value="temoignage">Témoignage</option>
                   </select>
                   <div className="flex gap-1.5">
                     <input
@@ -767,6 +769,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                 <option value="non_qualifie">Non qualifié</option>
                 <option value="sans_reponse">Sans réponse</option>
                 <option value="abandon">Abandon</option>
+                <option value="budget">Budget</option>
               </select>
               <div className="flex gap-2">
                 <button
