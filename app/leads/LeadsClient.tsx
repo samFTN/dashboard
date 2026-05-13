@@ -251,6 +251,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
   const [selectedLead, setSelectedLead] = useState<LeadRow | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc' | null>(null)
 
   const fetchLeads = useCallback(async (archived: boolean, statut: string, source: string) => {
     setLoading(true)
@@ -450,7 +451,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
           <table className="w-full text-sm border-collapse" style={{ minWidth: 560 }}>
             <thead>
               <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
-                {['Nom', 'Statut', 'Source', 'Entrée', 'Dernier contact', 'Prochaine action'].map(col => (
+                {['Nom', 'Statut', 'Source', 'Entrée', 'Dernier contact'].map(col => (
                   <th
                     key={col}
                     className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider"
@@ -459,6 +460,13 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                     {col}
                   </th>
                 ))}
+                <th
+                  className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider cursor-pointer select-none"
+                  style={{ color: 'var(--muted2)' }}
+                  onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                >
+                  Prochaine action {sortDir === 'asc' ? '↑' : sortDir === 'desc' ? '↓' : '↕'}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -469,7 +477,20 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                   </td>
                 </tr>
               ) : (
-                leads.filter(l => !filterAujourdhui || l.prochaine_action_date?.slice(0, 10) === today).map((lead, i) => (
+                (() => {
+                  const filtered = leads.filter(l => !filterAujourdhui || l.prochaine_action_date?.slice(0, 10) === today)
+                  if (sortDir) {
+                    filtered.sort((a, b) => {
+                      const da = a.prochaine_action_date ?? (a.statut === 'reserve' ? a.cours_essai_date : null)
+                      const db = b.prochaine_action_date ?? (b.statut === 'reserve' ? b.cours_essai_date : null)
+                      if (!da && !db) return 0
+                      if (!da) return 1
+                      if (!db) return -1
+                      return sortDir === 'asc' ? da.localeCompare(db) : db.localeCompare(da)
+                    })
+                  }
+                  return filtered
+                })().map((lead, i) => (
                   <tr
                     key={lead.id}
                     onClick={() => setSelectedLead(lead)}
@@ -517,7 +538,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                         return actionType ? (
                           <>
                             <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
-                              {({'appel': 'Appel', 'sms': 'SMS', 'whatsapp': 'WhatsApp', 'cours_essai': "Cours d'essai", 'cours_offert': 'Cours offert'} as Record<string,string>)[actionType] ?? actionType}
+                              {({'appel': 'Appel', 'sms': 'SMS', 'whatsapp': 'WhatsApp', 'cours_essai': "Cours d'essai", 'cours_offert': 'Cours offert', 'temoignage': 'Témoignage'} as Record<string,string>)[actionType] ?? actionType}
                             </p>
                             <p className="text-xs" style={{ color: 'var(--muted2)' }}>
                               {fmt(actionDate)}
@@ -535,7 +556,8 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                     </td>
                   </tr>
                 ))
-              )}
+              )
+              }
             </tbody>
           </table>
         </div>
