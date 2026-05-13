@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS leads (
 
   -- Archivage
   archive          BOOLEAN NOT NULL DEFAULT FALSE,
-  raison_archivage TEXT     CHECK (raison_archivage IN ('non_qualifie','sans_reponse','abandon')),
+  raison_archivage TEXT     CHECK (raison_archivage IN ('non_qualifie','sans_reponse','abandon','budget')),
   date_archivage   TIMESTAMPTZ,
 
   -- Cours d'essai
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS leads (
   cours_essai_fait  BOOLEAN NOT NULL DEFAULT FALSE,
 
   -- Prochaine action (dénormalisé pour perf liste)
-  prochaine_action_type TEXT CHECK (prochaine_action_type IN ('appel','sms','whatsapp','cours_essai','cours_offert')),
+  prochaine_action_type TEXT CHECK (prochaine_action_type IN ('appel','sms','whatsapp','cours_essai','cours_offert','temoignage')),
   prochaine_action_date TIMESTAMPTZ,
   prochaine_action_note TEXT,
 
