@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
 
-const TYPES = ['appel', 'sms', 'whatsapp', 'cours_essai']
+const TYPES = ['appel', 'sms', 'whatsapp', 'mail', 'cours_essai']
 
 export async function POST(
   req: NextRequest,

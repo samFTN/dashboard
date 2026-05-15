@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS leads (
   cours_essai_fait  BOOLEAN NOT NULL DEFAULT FALSE,
 
   -- Prochaine action (dénormalisé pour perf liste)
-  prochaine_action_type TEXT CHECK (prochaine_action_type IN ('appel','sms','whatsapp','cours_essai','cours_offert','temoignage')),
+  prochaine_action_type TEXT CHECK (prochaine_action_type IN ('appel','sms','whatsapp','mail','cours_essai','cours_offert','temoignage')),
   prochaine_action_date TIMESTAMPTZ,
   prochaine_action_note TEXT,
 
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS leads (
 CREATE TABLE IF NOT EXISTS actions_contact (
   id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   lead_id  UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
-  type     TEXT NOT NULL CHECK (type IN ('appel','sms','cours_essai')),
+  type     TEXT NOT NULL CHECK (type IN ('appel','sms','whatsapp','mail','cours_essai','cours_offert','temoignage')),
   date     TIMESTAMPTZ NOT NULL,
   note     TEXT
 );
