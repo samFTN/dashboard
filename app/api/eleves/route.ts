@@ -44,7 +44,8 @@ function nbEcheances(mode: string) {
   if (mode === 'cb_1x') return 1
   if (mode === 'cb_2x') return 2
   if (mode === 'cb_3x') return 3
-  return 4 // cb_4x et paypal_4x
+  if (mode === 'cb_4x') return 4
+  return 1 // paypal_4x : PayPal verse le total en une fois à Samuel
 }
 
 // Ajoute N mois à une date ISO
