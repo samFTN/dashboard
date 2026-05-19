@@ -57,9 +57,9 @@ function addMonths(isoDate: string, months: number): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { lead_id, formule, date_debut, mode_paiement, objectifs } = body
+    const { lead_id, formule, date_debut, mode_paiement, objectifs, montant_total } = body
 
-    if (!lead_id || !formule || !date_debut || !mode_paiement) {
+    if (!lead_id || !formule || !date_debut || !mode_paiement || !montant_total) {
       return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 })
     }
 
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     const dureeMois = formuleRows.length > 0 ? formuleRows[0].duree_mois : 4
     const dateFinPrevue = addMonths(date_debut, dureeMois)
     const nb = nbEcheances(mode_paiement)
-    const montantTotal = 597
+    const montantTotal = parseFloat(String(montant_total))
     const montantEcheance = +(montantTotal / nb).toFixed(2)
 
     const client = await pool.connect()

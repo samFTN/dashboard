@@ -131,6 +131,7 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
     formule: 'programme_4_mois',
     date_debut: new Date().toISOString().slice(0, 10),
     mode_paiement: 'cb_2x',
+    montant_total: '597',
     objectifs: lead.objectifs ?? '',
   })
 
@@ -844,6 +845,18 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
                   <option value="cb_4x">CB 4×</option>
                   <option value="paypal_4x">PayPal 4×</option>
                 </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--muted2)', display: 'block', marginBottom: 4 }}>Montant total (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={convertForm.montant_total}
+                  onChange={e => setConvertForm(p => ({ ...p, montant_total: e.target.value }))}
+                  style={inputStyle}
+                  required
+                />
               </div>
               <div>
                 <label style={{ fontSize: 12, color: 'var(--muted2)', display: 'block', marginBottom: 4 }}>Objectifs</label>
