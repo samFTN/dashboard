@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import LeadPanel from './LeadPanel'
 
 export type LeadRow = {
@@ -252,6 +252,11 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
   const [showCreate, setShowCreate] = useState(false)
   const [loading, setLoading] = useState(false)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [pullY, setPullY] = useState(0)
+  const [isPulling, setIsPulling] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const touchStartY = useRef(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const fetchLeads = useCallback(async (archived: boolean, statut: string, source: string) => {
     setLoading(true)
@@ -286,6 +291,31 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
   function handleSourceFilter(s: string) {
     setFilterSource(s)
     fetchLeads(showArchived, filterStatut, s)
+  }
+
+  function onTouchStart(e: React.TouchEvent) {
+    if (scrollRef.current?.scrollTop === 0)
+      touchStartY.current = e.touches[0].clientY
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    if (!touchStartY.current) return
+    const dy = e.touches[0].clientY - touchStartY.current
+    if (dy > 0 && scrollRef.current?.scrollTop === 0) {
+      setIsPulling(true)
+      setPullY(Math.min(dy * 0.5, 80))
+    }
+  }
+
+  async function onTouchEnd() {
+    if (pullY >= 60) {
+      setIsRefreshing(true)
+      await fetchLeads(showArchived, filterStatut, filterSource)
+      setIsRefreshing(false)
+    }
+    setIsPulling(false)
+    setPullY(0)
+    touchStartY.current = 0
   }
 
   function handleLeadChanged(changes: Partial<LeadRow>) {
@@ -443,7 +473,19 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
       )}
 
       {/* Table */}
-      <div className="flex-1 overflow-auto px-4 md:px-8 py-4 md:py-5">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-auto px-4 md:px-8 py-4 md:py-5"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={isPulling ? { transform: `translateY(${pullY}px)`, transition: 'none' } : { transition: 'transform 0.2s' }}
+      >
+        {(isPulling || isRefreshing) && (
+          <div style={{ textAlign: 'center', paddingBottom: 8, fontSize: 13, color: 'var(--muted)' }}>
+            {isRefreshing ? '⟳ Actualisation...' : pullY >= 60 ? '↑ Relâcher' : '↓ Tirer pour actualiser'}
+          </div>
+        )}
         <div
           className="rounded-2xl overflow-hidden overflow-x-auto"
           style={{ border: '1px solid var(--border)', background: 'var(--card)' }}
