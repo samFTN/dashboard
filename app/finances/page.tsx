@@ -45,7 +45,7 @@ async function fetchInitial() {
     [moisCourant, nbJoursMois]
   )
 
-  const [kpis, outils, meta, inscriptions, echeances, alertes, eleves] = await Promise.all([
+  const [kpis, outils, meta, inscriptions, echeances] = await Promise.all([
     // KPIs mois courant
     pool.query(
       `SELECT
@@ -98,15 +98,6 @@ async function fetchInitial() {
        JOIN eleves e ON e.id = ec.eleve_id
        ORDER BY ec.date_prelevement ASC`
     ),
-    // Alertes paiements non assignés
-    pool.query(
-      `SELECT id::text, created_at, stripe_email, stripe_nom, montant, statut, meta
-       FROM alertes_paiement WHERE statut = 'non_assigne' ORDER BY created_at DESC`
-    ),
-    // Liste élèves pour dropdown résolution alertes
-    pool.query(
-      `SELECT id::text, nom, email FROM eleves WHERE actif = true ORDER BY nom ASC`
-    ),
   ])
 
   const row = kpis.rows[0]
@@ -138,8 +129,6 @@ async function fetchInitial() {
     meta: meta.rows[0] ?? { mois: moisCourant, budget_journalier: 20, nb_jours: nbJoursMois, montant_realise: null },
     inscriptions: inscriptions.rows,
     echeances: echeances.rows,
-    alertes: alertes.rows,
-    eleves: eleves.rows,
     periode: { debut, fin },
     todayCount,
   }

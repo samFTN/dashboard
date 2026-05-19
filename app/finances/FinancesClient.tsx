@@ -27,14 +27,6 @@ type MetaCharge = {
   nb_jours: number; montant_realise: number | null
 }
 
-type Alerte = {
-  id: string; created_at: string; stripe_email: string
-  stripe_nom: string | null; montant: number; statut: string
-  meta: { type: string; candidats?: { id: string; nom: string }[] } | null
-}
-
-type Eleve = { id: string; nom: string; email: string }
-
 type Kpis = {
   revenus_contractes: number; revenus_encaisses: number; reste_a_encaisser: number
   charges_outils: number; charges_prof: number; charges_meta: number
@@ -112,8 +104,6 @@ export default function FinancesClient({
   meta: initialMeta,
   inscriptions: initialInscriptions,
   echeances: initialEcheances,
-  alertes: initialAlertes,
-  eleves,
   periode: initialPeriode,
   todayCount,
 }: {
@@ -122,8 +112,6 @@ export default function FinancesClient({
   meta: MetaCharge
   inscriptions: Inscription[]
   echeances: Echeance[]
-  alertes: Alerte[]
-  eleves: Eleve[]
   periode: Periode
   todayCount: number
 }) {
@@ -131,7 +119,6 @@ export default function FinancesClient({
   const [outils, setOutils] = useState<Outil[]>(initialOutils)
   const [meta, setMeta] = useState<MetaCharge>(initialMeta)
   const [echeances, setEcheances] = useState<Echeance[]>(initialEcheances)
-  const [alertes, setAlertes] = useState<Alerte[]>(initialAlertes)
   const [periode, setPeriode] = useState<Periode>(initialPeriode)
   const [periodeType, setPeriodeType] = useState<'mois' | 'trimestre' | 'annee' | 'custom'>('mois')
   const [kpisLoading, setKpisLoading] = useState(false)
@@ -139,7 +126,6 @@ export default function FinancesClient({
   const [outilValues, setOutilValues] = useState<Record<string, string>>({})
   const [metaEdit, setMetaEdit] = useState(false)
   const [metaBudget, setMetaBudget] = useState(String(initialMeta.budget_journalier))
-  const [assignTarget, setAssignTarget] = useState<Record<string, string>>({})
 
   // ── Période ────────────────────────────────────────────────
   const today = new Date().toISOString().slice(0, 10)
@@ -234,22 +220,6 @@ export default function FinancesClient({
     setMetaEdit(false)
   }
 
-  // ── Résoudre une alerte ────────────────────────────────────
-  async function resolveAlerte(alerteId: string, action: 'assigner' | 'ignorer') {
-    const eleve_id = assignTarget[alerteId]
-    if (action === 'assigner' && !eleve_id) return
-
-    const res = await fetch(`/api/finances/alertes/${alerteId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, eleve_id }),
-    })
-    if (res.ok) {
-      setAlertes(prev => prev.filter(a => a.id !== alerteId))
-      if (action === 'assigner') fetchKpis(periode)
-    }
-  }
-
   // ── Tri échéances ──────────────────────────────────────────
   const echeancesAVenir = echeances.filter(e => !e.encaisse).sort(
     (a, b) => a.date_prelevement.localeCompare(b.date_prelevement)
@@ -290,66 +260,6 @@ export default function FinancesClient({
             </div>
           </div>
         </div>
-
-        {/* ── Alertes paiements ── */}
-        {alertes.length > 0 && (
-          <div className="mb-6 rounded-2xl overflow-hidden" style={{ border: '1px solid #fecaca', background: '#fef2f2' }}>
-            <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid #fecaca' }}>
-              <span className="text-sm font-bold" style={{ color: '#dc2626' }}>
-                {`⚠ ${alertes.length} paiement${alertes.length > 1 ? 's' : ''} Stripe non reconnu${alertes.length > 1 ? 's' : ''}`}
-              </span>
-            </div>
-            <div className="divide-y" style={{ borderColor: '#fecaca' }}>
-              {alertes.map(a => (
-                <div key={a.id} className="px-4 py-3 flex flex-wrap items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold" style={{ color: 'var(--dark)' }}>
-                      {a.stripe_nom || '—'} · {a.stripe_email}
-                    </p>
-                    <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                      {EUR2(a.montant)} · {fmt(a.created_at)}
-                      {a.meta?.type === 'homonymes' && (
-                        <span className="ml-2 font-medium" style={{ color: '#d97706' }}>Homonymes détectés</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={assignTarget[a.id] ?? ''}
-                      onChange={e => setAssignTarget(prev => ({ ...prev, [a.id]: e.target.value }))}
-                      className="text-xs rounded-lg px-2 py-1.5"
-                      style={{ border: '1px solid #fecaca', background: 'white', color: 'var(--dark)', maxWidth: 180 }}
-                    >
-                      <option value="">— Assigner à…</option>
-                      {a.meta?.candidats
-                        ? a.meta.candidats.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)
-                        : eleves.map(e => <option key={e.id} value={e.id}>{e.nom}</option>)
-                      }
-                    </select>
-                    <button
-                      onClick={() => resolveAlerte(a.id, 'assigner')}
-                      disabled={!assignTarget[a.id]}
-                      className="text-xs px-3 py-1.5 rounded-lg font-semibold"
-                      style={{
-                        background: assignTarget[a.id] ? '#dc2626' : '#f3f4f6',
-                        color: assignTarget[a.id] ? 'white' : 'var(--muted)',
-                      }}
-                    >
-                      Assigner
-                    </button>
-                    <button
-                      onClick={() => resolveAlerte(a.id, 'ignorer')}
-                      className="text-xs px-2 py-1.5 rounded-lg"
-                      style={{ border: '1px solid #fecaca', color: 'var(--muted)', background: 'none' }}
-                    >
-                      Ignorer
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ── Sélecteur de période ── */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
@@ -408,6 +318,78 @@ export default function FinancesClient({
             />
           </div>
         </Section>
+
+        {/* ── Inscriptions (relevé par période) ── */}
+        {(() => {
+          const rows = initialInscriptions.filter(i =>
+            i.date_inscription >= periode.debut && i.date_inscription <= periode.fin
+          ).sort((a, b) => b.date_inscription.localeCompare(a.date_inscription))
+          const totalContracte = rows.reduce((s, i) => s + Number(i.montant_contracte), 0)
+          const totalEncaisse = rows.reduce((s, i) => s + Number(i.montant_encaisse), 0)
+          return (
+            <Section title={`Inscriptions · ${fmtShort(periode.debut)} – ${fmtShort(periode.fin)}`}>
+              <div className="rounded-2xl overflow-hidden overflow-x-auto" style={{ border: '1px solid var(--border)', background: 'var(--card)' }}>
+                <table className="w-full text-sm border-collapse" style={{ minWidth: 480 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
+                      {['Date', 'Élève', 'Programme', 'Encaissé', 'Contracté'].map(col => (
+                        <th key={col} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--muted2)' }}>
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-12 text-center text-sm" style={{ color: 'var(--muted)' }}>
+                          Aucune inscription sur cette période
+                        </td>
+                      </tr>
+                    ) : (
+                      rows.map((insc, i) => (
+                        <tr key={insc.id} style={{ borderTop: i > 0 ? '1px solid var(--border2)' : undefined }}>
+                          <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
+                            {fmtShort(insc.date_inscription)}
+                          </td>
+                          <td className="px-4 py-3 font-medium" style={{ color: 'var(--dark)' }}>
+                            {insc.eleve_nom}
+                          </td>
+                          <td className="px-4 py-3 text-xs" style={{ color: 'var(--muted2)' }}>
+                            {insc.formule === 'programme_4_mois' ? 'Programme 4 mois'
+                              : insc.formule === 'renouvellement_12_mois_avec_prof' ? 'Renouvellement 12 mois (avec prof)'
+                              : insc.formule === 'renouvellement_12_mois_sans_prof' ? 'Renouvellement 12 mois (sans prof)'
+                              : insc.formule}
+                            {' · '}{MODE_LABELS[insc.mode_paiement] ?? insc.mode_paiement}
+                          </td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: '#16a34a' }}>
+                            {EUR2(Number(insc.montant_encaisse))}
+                          </td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: 'var(--dark)' }}>
+                            {EUR2(Number(insc.montant_contracte))}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                    {rows.length > 0 && (
+                      <tr style={{ borderTop: '2px solid var(--border)', background: 'var(--bg)' }}>
+                        <td colSpan={3} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+                          Total
+                        </td>
+                        <td className="px-4 py-3 font-black" style={{ color: '#16a34a' }}>
+                          {EUR2(totalEncaisse)}
+                        </td>
+                        <td className="px-4 py-3 font-black" style={{ color: 'var(--dark)' }}>
+                          {EUR2(totalContracte)}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+          )
+        })()}
 
         {/* ── Charges ventilées ── */}
         <Section title="Charges">
