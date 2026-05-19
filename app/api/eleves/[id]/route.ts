@@ -88,6 +88,20 @@ const ALLOWED = [
   'prof_dedie_id', 'objectifs', 'notes', 'actif',
 ] as const
 
+function addMonths(isoDate: string, months: number): string {
+  const d = new Date(isoDate)
+  d.setMonth(d.getMonth() + months)
+  return d.toISOString().slice(0, 10)
+}
+
+function nbEcheancesFromMode(mode: string): number {
+  if (mode === 'cb_1x') return 1
+  if (mode === 'cb_2x') return 2
+  if (mode === 'cb_3x') return 3
+  if (mode === 'cb_4x') return 4
+  return 1 // paypal_4x
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -107,8 +121,77 @@ export async function PATCH(
     if (sets.length === 0) return NextResponse.json({ error: 'Aucun champ' }, { status: 400 })
     sets.push('updated_at = NOW()')
 
-    await pool.query(`UPDATE eleves SET ${sets.join(', ')} WHERE id = $1`, values)
-    return NextResponse.json({ ok: true })
+    const paymentChanged = ['montant_total', 'mode_paiement', 'nb_echeances'].some(f => f in body)
+
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      await client.query(`UPDATE eleves SET ${sets.join(', ')} WHERE id = $1`, values)
+
+      if (paymentChanged) {
+        // Lire l'état actuel de l'élève après mise à jour
+        const { rows: eleveRows } = await client.query(
+          `SELECT montant_total, mode_paiement, nb_echeances, date_debut FROM eleves WHERE id = $1`, [id]
+        )
+        const eleve = eleveRows[0]
+        const montant = parseFloat(eleve.montant_total)
+        const mode = eleve.mode_paiement
+        const nb = nbEcheancesFromMode(mode)
+        const montantEcheance = +(montant / nb).toFixed(2)
+        const dateDebut = eleve.date_debut instanceof Date
+          ? eleve.date_debut.toISOString().slice(0, 10)
+          : String(eleve.date_debut).slice(0, 10)
+        const isPaypal = mode === 'paypal_4x'
+
+        // Mettre à jour inscription_financieres
+        await client.query(
+          `UPDATE inscriptions_financieres
+           SET montant_contracte = $1, mode_paiement = $2
+           WHERE eleve_id = $3`,
+          [montant, mode, id]
+        )
+
+        // Récupérer l'inscription
+        const { rows: inscRows } = await client.query(
+          `SELECT id::text FROM inscriptions_financieres WHERE eleve_id = $1`, [id]
+        )
+        if (inscRows.length > 0) {
+          const inscId = inscRows[0].id
+
+          // Supprimer uniquement les échéances non encaissées
+          await client.query(
+            `DELETE FROM echeances WHERE inscription_id = $1 AND encaisse = false`, [inscId]
+          )
+
+          // Compter les échéances déjà encaissées
+          const { rows: paidRows } = await client.query(
+            `SELECT COUNT(*)::int AS cnt FROM echeances WHERE inscription_id = $1 AND encaisse = true`, [inscId]
+          )
+          const nbPaid = paidRows[0].cnt
+
+          // Recréer les échéances manquantes
+          for (let i = nbPaid; i < nb; i++) {
+            const datePrel = addMonths(dateDebut, i)
+            await client.query(
+              `INSERT INTO echeances (inscription_id, eleve_id, date_prelevement, montant, encaisse, date_encaissement)
+               VALUES ($1, $2, $3, $4, $5, $6)`,
+              [inscId, id, datePrel, montantEcheance, isPaypal, isPaypal ? dateDebut : null]
+            )
+          }
+
+          // Mettre à jour nb_echeances sur l'élève
+          await client.query(`UPDATE eleves SET nb_echeances = $1 WHERE id = $2`, [nb, id])
+        }
+      }
+
+      await client.query('COMMIT')
+      return NextResponse.json({ ok: true })
+    } catch (err) {
+      await client.query('ROLLBACK')
+      throw err
+    } finally {
+      client.release()
+    }
   } catch (err) {
     console.error('[PATCH /api/eleves/[id]]', err)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

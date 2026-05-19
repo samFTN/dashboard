@@ -71,6 +71,138 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
+function PaiementsSection({
+  echeances,
+  montantContracte,
+  onEcheanceUpdate,
+}: {
+  echeances: Echeance[]
+  montantContracte: number
+  onEcheanceUpdate: (id: string, changes: Partial<Echeance>) => void
+}) {
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editMontant, setEditMontant] = useState('')
+  const [editDate, setEditDate] = useState('')
+
+  if (echeances.length === 0) return null
+
+  const totalEc = echeances.reduce((s, e) => s + Number(e.montant), 0)
+  const encaisse = echeances.filter(e => e.encaisse).reduce((s, e) => s + Number(e.montant), 0)
+  const reste = totalEc - encaisse
+  const incoherent = Math.abs(totalEc - montantContracte) > 0.05
+
+  async function saveEcheance(ec: Echeance) {
+    const montant = parseFloat(editMontant)
+    const date_prelevement = editDate
+    if (isNaN(montant) || !date_prelevement) return
+    await fetch(`/api/finances/echeances/${ec.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ montant, date_prelevement }),
+    })
+    onEcheanceUpdate(ec.id, { montant, date_prelevement })
+    setEditId(null)
+  }
+
+  async function toggleEncaisse(ec: Echeance) {
+    const newVal = !ec.encaisse
+    const date_encaissement = newVal ? new Date().toISOString().slice(0, 10) : null
+    await fetch(`/api/finances/echeances/${ec.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ encaisse: newVal, date_encaissement }),
+    })
+    onEcheanceUpdate(ec.id, { encaisse: newVal, date_encaissement })
+  }
+
+  return (
+    <Section title="Paiements">
+      {incoherent && (
+        <div style={{ fontSize: 11, color: '#d97706', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6, padding: '6px 10px', marginBottom: 10 }}>
+          ⚠ Total des échéances ({totalEc.toFixed(2)} €) ≠ montant contracté ({montantContracte.toFixed(2)} €)
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <div style={{ flex: 1, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 7, padding: '8px 12px', textAlign: 'center' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#16a34a' }}>{encaisse.toFixed(2)} €</div>
+          <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>encaissé</div>
+        </div>
+        {reste > 0.01 && (
+          <div style={{ flex: 1, background: 'var(--border2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 12px', textAlign: 'center' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--dark)' }}>{reste.toFixed(2)} €</div>
+            <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>à venir</div>
+          </div>
+        )}
+      </div>
+      <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+        {echeances.map((ec, i) => (
+          <div key={ec.id} style={{
+            padding: '8px 12px',
+            borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+            background: ec.encaisse ? 'var(--card)' : 'var(--border2)',
+          }}>
+            {editId === ec.id ? (
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                <input
+                  type="number" step="0.01" value={editMontant}
+                  onChange={e => setEditMontant(e.target.value)}
+                  style={{ width: 80, fontSize: 12, padding: '3px 6px', border: '1.5px solid var(--accent)', borderRadius: 5 }}
+                />
+                <span style={{ fontSize: 11, color: 'var(--muted)' }}>€</span>
+                <input
+                  type="date" value={editDate}
+                  onChange={e => setEditDate(e.target.value)}
+                  style={{ fontSize: 12, padding: '3px 6px', border: '1.5px solid var(--accent)', borderRadius: 5 }}
+                />
+                <button onClick={() => saveEcheance(ec)}
+                  style={{ fontSize: 11, padding: '3px 8px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer' }}>
+                  ✓
+                </button>
+                <button onClick={() => setEditId(null)}
+                  style={{ fontSize: 11, padding: '3px 8px', background: 'none', border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer', color: 'var(--muted)' }}>
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    onClick={() => toggleEncaisse(ec)}
+                    title={ec.encaisse ? 'Cliquer pour annuler' : 'Marquer encaissé'}
+                    style={{
+                      width: 14, height: 14, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+                      background: ec.encaisse ? '#16a34a' : 'transparent',
+                      border: ec.encaisse ? 'none' : '1.5px solid #9ca3af',
+                      padding: 0,
+                    }}
+                  />
+                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    {ec.encaisse && ec.date_encaissement ? fmt(ec.date_encaissement) : fmt(ec.date_prelevement)}
+                  </span>
+                  {!ec.encaisse && <span style={{ fontSize: 10, color: '#9ca3af' }}>prévu</span>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: ec.encaisse ? 'var(--dark)' : 'var(--muted)' }}>
+                    {Number(ec.montant).toFixed(2)} €
+                  </span>
+                  {!ec.encaisse && (
+                    <button
+                      onClick={() => { setEditId(ec.id); setEditMontant(String(ec.montant)); setEditDate(ec.date_prelevement.slice(0, 10)) }}
+                      style={{ fontSize: 10, padding: '2px 6px', background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--muted)' }}
+                    >
+                      ✎
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </Section>
+  )
+}
+
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
@@ -1110,60 +1242,17 @@ export default function ElevePanel({
           </Section>
 
           {/* Paiements */}
-          {detail && detail.echeances.length > 0 && (
-            <Section title="Paiements">
-              {(() => {
-                const total = detail.echeances.reduce((s, e) => s + Number(e.montant), 0)
-                const encaisse = detail.echeances.filter(e => e.encaisse).reduce((s, e) => s + Number(e.montant), 0)
-                const resteAEncaisser = total - encaisse
-                return (
-                  <>
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                      <div style={{ flex: 1, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 7, padding: '8px 12px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#16a34a' }}>{encaisse.toFixed(2)} €</div>
-                        <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>encaissé</div>
-                      </div>
-                      {resteAEncaisser > 0 && (
-                        <div style={{ flex: 1, background: 'var(--border2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 12px', textAlign: 'center' }}>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--dark)' }}>{resteAEncaisser.toFixed(2)} €</div>
-                          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>à venir</div>
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
-                      {detail.echeances.map((ec, i) => (
-                        <div key={ec.id} style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '8px 12px',
-                          borderTop: i > 0 ? '1px solid var(--border)' : 'none',
-                          background: ec.encaisse ? 'var(--card)' : 'var(--border2)',
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{
-                              width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                              background: ec.encaisse ? '#16a34a' : 'var(--border)',
-                              border: ec.encaisse ? 'none' : '1.5px solid #9ca3af',
-                              display: 'inline-block',
-                            }} />
-                            <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                              {ec.encaisse && ec.date_encaissement
-                                ? fmt(ec.date_encaissement)
-                                : fmt(ec.date_prelevement)}
-                            </span>
-                            {!ec.encaisse && (
-                              <span style={{ fontSize: 10, color: '#9ca3af' }}>prévu</span>
-                            )}
-                          </div>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: ec.encaisse ? 'var(--dark)' : 'var(--muted)' }}>
-                            {Number(ec.montant).toFixed(2)} €
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )
-              })()}
-            </Section>
+          {detail && (
+            <PaiementsSection
+              echeances={detail.echeances}
+              montantContracte={Number(detail.montant_total)}
+              onEcheanceUpdate={(id, changes) => {
+                setDetail(prev => prev ? {
+                  ...prev,
+                  echeances: prev.echeances.map(e => e.id === id ? { ...e, ...changes } : e),
+                } : prev)
+              }}
+            />
           )}
 
           {/* Séances */}
