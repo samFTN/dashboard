@@ -115,18 +115,15 @@ export async function POST(req: NextRequest) {
       )
       const inscId = inscRows[0].id
 
-      // 3. Créer les échéances
+      // 3. Créer les échéances — la 1ère est toujours encaissée à la date d'inscription
       for (let i = 0; i < nb; i++) {
         const datePrelevement = addMonths(date_debut, i)
-        const encaisse = mode_paiement === 'paypal_4x' // PayPal verse tout dès le départ
+        const encaisse = i === 0
         await client.query(
           `INSERT INTO echeances
              (inscription_id, eleve_id, date_prelevement, montant, encaisse, date_encaissement)
            VALUES ($1, $2, $3, $4, $5, $6)`,
-          [
-            inscId, eleveId, datePrelevement, montantEcheance,
-            encaisse, encaisse ? date_debut : null,
-          ]
+          [inscId, eleveId, datePrelevement, montantEcheance, encaisse, encaisse ? date_debut : null]
         )
       }
 
