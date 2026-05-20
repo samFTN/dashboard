@@ -19,15 +19,15 @@ export async function GET(req: NextRequest) {
       echeances_a_venir,
       eleves_actifs,
     ] = await Promise.all([
-      // Revenus contractés (inscriptions signées dans la période)
+      // Revenus (inscriptions signées dans la période)
       pool.query(
         `SELECT
-          COALESCE(SUM(montant_contracte), 0)::numeric AS contractes,
-          COALESCE(SUM(CASE WHEN e.encaisse = true AND e.date_encaissement BETWEEN $1 AND $2
-            THEN e.montant ELSE 0 END), 0)::numeric AS encaisses,
+          COALESCE(SUM(i.montant_contracte), 0)::numeric AS contractes,
+          COALESCE(SUM(CASE WHEN e.encaisse = true THEN e.montant ELSE 0 END), 0)::numeric AS encaisses,
           COALESCE(SUM(CASE WHEN e.encaisse = false THEN e.montant ELSE 0 END), 0)::numeric AS reste
         FROM inscriptions_financieres i
-        LEFT JOIN echeances e ON e.inscription_id = i.id`,
+        LEFT JOIN echeances e ON e.inscription_id = i.id
+        WHERE i.date_inscription BETWEEN $1 AND $2`,
         [debut, fin]
       ),
       // Charges outils (pro-rata mensuel × nb mois dans la période)

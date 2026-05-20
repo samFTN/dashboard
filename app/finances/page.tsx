@@ -49,11 +49,14 @@ async function fetchInitial() {
     // KPIs mois courant
     pool.query(
       `SELECT
-        COALESCE((SELECT SUM(montant_contracte) FROM inscriptions_financieres
-          WHERE date_inscription BETWEEN $1 AND $2), 0)::numeric AS revenus_contractes,
-        COALESCE((SELECT SUM(e.montant) FROM echeances e
-          WHERE e.encaisse = true AND e.date_encaissement BETWEEN $1 AND $2), 0)::numeric AS revenus_encaisses,
-        COALESCE((SELECT SUM(e.montant) FROM echeances e WHERE e.encaisse = false), 0)::numeric AS reste_a_encaisser,
+        COALESCE((SELECT SUM(i.montant_contracte) FROM inscriptions_financieres i
+          WHERE i.date_inscription BETWEEN $1 AND $2), 0)::numeric AS revenus_contractes,
+        COALESCE((SELECT SUM(ec.montant) FROM echeances ec
+          JOIN inscriptions_financieres i ON ec.inscription_id = i.id
+          WHERE ec.encaisse = true AND i.date_inscription BETWEEN $1 AND $2), 0)::numeric AS revenus_encaisses,
+        COALESCE((SELECT SUM(ec.montant) FROM echeances ec
+          JOIN inscriptions_financieres i ON ec.inscription_id = i.id
+          WHERE ec.encaisse = false AND i.date_inscription BETWEEN $1 AND $2), 0)::numeric AS reste_a_encaisser,
         COALESCE((SELECT SUM(montant_annuel) FROM charges_outils), 0) / 12 AS charges_outils_mensuel,
         (SELECT COUNT(*)::int FROM seances WHERE date BETWEEN $1 AND $2) AS nb_seances_prof,
         COALESCE((SELECT COALESCE(montant_realise, budget_journalier * nb_jours)
