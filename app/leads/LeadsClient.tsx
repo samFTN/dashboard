@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import LeadPanel from './LeadPanel'
 
 export type LeadRow = {
@@ -257,6 +257,8 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
   const [isRefreshing, setIsRefreshing] = useState(false)
   const touchStartY = useRef(0)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const filtersRef = useRef({ showArchived, filterStatut, filterSource })
+  filtersRef.current = { showArchived, filterStatut, filterSource }
 
   const fetchLeads = useCallback(async (archived: boolean, statut: string, source: string) => {
     setLoading(true)
@@ -275,6 +277,22 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
       setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    const refresh = () => {
+      const { showArchived, filterStatut, filterSource } = filtersRef.current
+      fetchLeads(showArchived, filterStatut, filterSource)
+    }
+    const interval = setInterval(refresh, 30_000)
+    const onVisible = () => { if (!document.hidden) refresh() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [fetchLeads])
 
   function handleTabChange(archived: boolean) {
     setShowArchived(archived)

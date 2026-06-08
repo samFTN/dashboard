@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 
 // ── Types ────────────────────────────────────────────────────
 type Echeance = {
@@ -120,6 +120,8 @@ export default function FinancesClient({
   const [meta, setMeta] = useState<MetaCharge>(initialMeta)
   const [echeances, setEcheances] = useState<Echeance[]>(initialEcheances)
   const [periode, setPeriode] = useState<Periode>(initialPeriode)
+  const periodeRef = useRef(initialPeriode)
+  periodeRef.current = periode
   const [periodeType, setPeriodeType] = useState<'mois' | 'trimestre' | 'annee' | 'custom'>('mois')
   const [kpisLoading, setKpisLoading] = useState(false)
   const [outilEdit, setOutilEdit] = useState<string | null>(null)
@@ -156,6 +158,19 @@ export default function FinancesClient({
       setKpisLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    const refresh = () => fetchKpis(periodeRef.current)
+    const interval = setInterval(refresh, 30_000)
+    const onVisible = () => { if (!document.hidden) refresh() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [fetchKpis])
 
   function handlePeriodeType(type: 'mois' | 'trimestre' | 'annee' | 'custom') {
     setPeriodeType(type)

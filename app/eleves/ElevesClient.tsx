@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import ElevePanel from './ElevePanel'
 import ImportCSVModal from './ImportCSVModal'
 
@@ -75,6 +75,27 @@ export default function ElevesClient({
   const [showImport, setShowImport] = useState(false)
 
   const list = tab === 'actifs' ? actifs : anciens
+
+  const fetchEleves = useCallback(async () => {
+    const [r1, r2] = await Promise.all([
+      fetch('/api/eleves?actif=true'),
+      fetch('/api/eleves?actif=false'),
+    ])
+    if (r1.ok) setActifs(await r1.json())
+    if (r2.ok) setAnciens(await r2.json())
+  }, [])
+
+  useEffect(() => {
+    const interval = setInterval(fetchEleves, 30_000)
+    const onVisible = () => { if (!document.hidden) fetchEleves() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [fetchEleves])
 
   function handleEleveChanged(id: string, changes: Partial<EleveRow>) {
     if (changes.actif === false) {
