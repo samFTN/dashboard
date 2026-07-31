@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="h-full flex overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
         {/* Sidebar — desktop only */}
         <aside
-          className="hidden md:flex md:w-52 shrink-0 flex-col"
+          className="hidden lg:flex lg:w-52 shrink-0 flex-col"
           style={{ background: 'var(--card)', borderRight: '1px solid var(--border)' }}
         >
           <Link href="/" className="px-5 py-4 flex flex-col items-center hover:opacity-80 transition-opacity" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -54,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 overflow-auto pb-16 md:pb-0">
+        <main className="flex-1 overflow-auto pb-16 lg:pb-0">
           {children}
         </main>
 

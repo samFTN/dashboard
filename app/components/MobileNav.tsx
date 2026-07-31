@@ -56,7 +56,7 @@ export default function MobileNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex"
       style={{
         background: 'var(--card)',
         borderTop: '1px solid var(--border)',

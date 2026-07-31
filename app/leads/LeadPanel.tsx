@@ -96,11 +96,12 @@ type Props = {
   onClose: () => void
   onLeadChanged: (changes: Partial<LeadRow>) => void
   onArchived: () => void
+  onUnarchived?: () => void
   onActionAdded: (action: Action) => void
   onDeleted?: () => void
 }
 
-export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, onActionAdded, onDeleted }: Props) {
+export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, onUnarchived, onActionAdded, onDeleted }: Props) {
   const [currentLead, setCurrentLead] = useState<LeadRow>(lead)
   const [saving, setSaving] = useState(false)
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
@@ -223,6 +224,21 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
       onArchived()
     } catch {
       setError('Erreur lors de l\'archivage')
+      setSaving(false)
+    }
+  }
+
+  async function handleUnarchive() {
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/leads/${currentLead.id}/desarchiver`, {
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error()
+      onUnarchived?.()
+    } catch {
+      setError('Erreur lors du désarchivage')
       setSaving(false)
     }
   }
@@ -745,6 +761,18 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
               style={{ background: 'var(--accent)', color: 'white' }}
             >
               Convertir en élève
+            </button>
+          )}
+
+          {/* Désarchiver (remettre en actif, leads archivés uniquement) */}
+          {currentLead.archive && (
+            <button
+              onClick={handleUnarchive}
+              disabled={saving}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold"
+              style={{ background: 'var(--accent)', color: 'white' }}
+            >
+              Désarchiver ce lead
             </button>
           )}
 
