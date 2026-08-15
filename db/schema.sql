@@ -316,3 +316,25 @@ CREATE INDEX IF NOT EXISTS idx_echeances_encaisse        ON echeances(encaisse);
 -- Alertes paiement
 CREATE INDEX IF NOT EXISTS idx_alertes_paiement_statut ON alertes_paiement(statut);
 CREATE INDEX IF NOT EXISTS idx_alertes_paiement_stripe_payment_id ON alertes_paiement(stripe_payment_id);
+
+-- ─── Robustesse du webhook Tally (questionnaire de qualification) ───────────
+-- Dernier instantané connu des options de chaque question suivie (id + texte
+-- Tally). Sert à détecter tout changement — reformulation, ajout, suppression
+-- — et à déclencher une alerte au lieu de le découvrir sur un lead mal classé.
+CREATE TABLE IF NOT EXISTS tally_field_snapshot (
+  field_key   TEXT PRIMARY KEY,
+  options     JSONB NOT NULL,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Correspondance entre une règle de disqualification (slug stable, choisi par
+-- nous) et l'id d'option Tally qui la déclenche actuellement. Se met à jour
+-- automatiquement tant que le texte de la règle (DISQUALIFIERS) matche encore
+-- une option du formulaire — immunise la qualification contre une simple
+-- reformulation (l'id ne change pas, seul son texte affiché change).
+CREATE TABLE IF NOT EXISTS tally_disqualifier_ids (
+  slug        TEXT PRIMARY KEY,
+  option_id   TEXT NOT NULL,
+  option_text TEXT NOT NULL,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

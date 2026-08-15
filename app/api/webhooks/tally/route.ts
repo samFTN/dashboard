@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import pool from '@/lib/db'
+import { pushover } from '@/lib/pushover'
 
 interface TallyOption { id: string; text: string }
 
@@ -17,22 +18,43 @@ interface TallyPayload {
   data: { responseId: string; fields: TallyField[] }
 }
 
-// Disqualifying answers: [answer text, questionnaire key, display label]
-const DISQUALIFIERS: [string, string, string][] = [
-  ["Je n'ai pas encore commencé", 'anciennete', 'Ancienneté guitare'],
-  ['Moins de 3 mois', 'anciennete', 'Ancienneté guitare'],
-  ["Non, je veux seulement des cours à l'heure", 'adhesion_programme', 'Programme Guitarisation'],
-  ['Je viens seulement pour avoir quelques conseils pour progresser de mon côté', 'attentes_cours', "Attentes cours d'essai"],
-  ["Ce n'est pas le bon moment pour moi", 'delai_demarrage', 'Délai démarrage'],
+/**
+ * Une règle de disqualification, identifiée par un `slug` STABLE choisi par
+ * nous (jamais modifié) — c'est ce qui permet de la relier à un id d'option
+ * Tally même si le texte affiché change. `matchText` sert uniquement à
+ * (re)trouver cette option quand son texte correspond encore : c'est ce qui
+ * doit être mis à jour à la main si la reformulation est trop importante
+ * pour qu'un simple id suffise (l'alerte Pushover prévient dans ce cas).
+ */
+interface DisqualifierRule {
+  slug: string
+  key: string
+  label: string
+  matchText: string
+}
+
+const DISQUALIFIERS: DisqualifierRule[] = [
+  { slug: 'anciennete_pas_commence', key: 'anciennete', label: 'Ancienneté guitare', matchText: "Je n'ai pas encore commencé" },
+  { slug: 'anciennete_moins_3_mois', key: 'anciennete', label: 'Ancienneté guitare', matchText: 'Moins de 3 mois' },
+  { slug: 'adhesion_cours_a_heure', key: 'adhesion_programme', label: 'Programme Guitarisation', matchText: "Non, je veux seulement des cours à l'heure" },
+  { slug: 'attentes_conseils_seul', key: 'attentes_cours', label: "Attentes cours d'essai", matchText: 'Je viens seulement pour avoir quelques conseils pour progresser de mon côté' },
+  { slug: 'delai_pas_bon_moment', key: 'delai_demarrage', label: 'Délai démarrage', matchText: "Ce n'est pas le bon moment pour moi" },
 ]
 
-// Tally sends UUIDs for MULTIPLE_CHOICE — resolve them to text via the options array
+// Fragment (insensible à la casse) du label Tally pour retrouver chaque champ suivi.
+const FIELD_FRAGMENTS: Record<string, string> = {
+  anciennete: 'commencé la guitare',
+  adhesion_programme: 'te parle',
+  attentes_cours: "cours d'essai en visio",
+  delai_demarrage: 'quel délai',
+}
+
+// Tally envoie des UUIDs pour MULTIPLE_CHOICE — résolution en texte via options[]
 function resolveValue(field: TallyField): string | null {
   const v = field.value
   if (v == null) return null
 
   if (field.options && field.options.length > 0) {
-    // value is an array of selected option IDs
     const ids = Array.isArray(v) ? v : [v]
     const texts = ids
       .map(id => field.options!.find(o => o.id === id)?.text)
@@ -40,8 +62,15 @@ function resolveValue(field: TallyField): string | null {
     return texts.length > 0 ? texts.join(', ') : null
   }
 
-  // Plain text field
   return typeof v === 'string' ? v.trim() || null : String(v).trim() || null
+}
+
+function selectedIds(field: TallyField | undefined): string[] {
+  if (!field) return []
+  const v = field.value
+  if (Array.isArray(v)) return v as string[]
+  if (typeof v === 'string') return [v]
+  return []
 }
 
 function extractByLabel(fields: TallyField[], label: string): string | null {
@@ -54,17 +83,120 @@ function extractByLabelContains(fields: TallyField[], fragment: string): string 
   return f ? resolveValue(f) : null
 }
 
+function findFieldByLabelContains(fields: TallyField[], fragment: string): TallyField | undefined {
+  return fields.find(f => f.label.toLowerCase().includes(fragment.toLowerCase()))
+}
+
 function extractByType(fields: TallyField[], type: string): string | null {
   const f = fields.find(f => f.type === type)
   return f ? resolveValue(f) : null
 }
 
-function detectDisqualification(q: Record<string, string | undefined>): string | null {
+interface OptSnap { id: string; text: string }
+
+function normalizeOptions(options: TallyOption[] | undefined): OptSnap[] {
+  return (options ?? [])
+    .map(o => ({ id: o.id, text: o.text }))
+    .sort((a, b) => a.id.localeCompare(b.id))
+}
+
+/**
+ * Compare les options actuelles d'un champ suivi à leur dernier instantané
+ * connu. Premier passage → mémorise sans alerter. Écart détecté → alerte
+ * Pushover avec le détail, puis met à jour l'instantané.
+ */
+async function checkFieldDrift(fieldKey: string, label: string, current: OptSnap[]): Promise<void> {
+  if (current.length === 0) return // champ texte libre — rien à surveiller
+
+  const { rows } = await pool.query(
+    `SELECT options FROM tally_field_snapshot WHERE field_key = $1`,
+    [fieldKey],
+  )
+  const stored: OptSnap[] | null = rows[0]?.options ?? null
+
+  if (stored && JSON.stringify(stored) === JSON.stringify(current)) return
+
+  await pool.query(
+    `INSERT INTO tally_field_snapshot (field_key, options, updated_at)
+     VALUES ($1, $2, NOW())
+     ON CONFLICT (field_key) DO UPDATE SET options = $2, updated_at = NOW()`,
+    [fieldKey, JSON.stringify(current)],
+  )
+
+  if (!stored) return // premier passage : instantané de référence, pas d'alerte
+
+  const storedById = new Map(stored.map(o => [o.id, o.text]))
+  const currentById = new Map(current.map(o => [o.id, o.text]))
+  const added = current.filter(o => !storedById.has(o.id))
+  const removed = stored.filter(o => !currentById.has(o.id))
+  const changed = current.filter(o => storedById.has(o.id) && storedById.get(o.id) !== o.text)
+
+  const lines: string[] = [
+    ...added.map(o => `+ nouvelle option : « ${o.text} »`),
+    ...removed.map(o => `- option supprimée : « ${o.text} »`),
+    ...changed.map(o => `~ reformulée : « ${storedById.get(o.id)} » → « ${o.text} »`),
+  ]
+  if (lines.length === 0) return // ordre changé seulement, sans impact
+
+  console.log(`[webhooks/tally] Dérive détectée sur "${label}":`, lines)
+  await pushover(
+    `Question « ${label} » modifiée sur Tally :\n\n${lines.join('\n')}\n\nVérifie que les règles de qualification (DISQUALIFIERS) sont toujours à jour.`,
+    { title: '⚠️ Formulaire Tally modifié' },
+  ).catch(e => console.error('[webhooks/tally] Échec alerte dérive :', e))
+}
+
+/**
+ * Pour chaque règle, retrouve l'id d'option Tally qui la déclenche
+ * actuellement. Auto-associe (et mémorise) le premier id dont le texte
+ * matche encore `matchText` — c'est ce qui rend une simple reformulation
+ * inoffensive tant que le texte de la règle est toujours présent quelque
+ * part dans les options du champ.
+ */
+async function resolveActiveDisqualifierIds(
+  fieldsByKey: Record<string, OptSnap[]>,
+): Promise<Map<string, string>> {
+  const { rows } = await pool.query(
+    `SELECT slug, option_id FROM tally_disqualifier_ids`,
+  )
+  const known = new Map<string, string>(rows.map(r => [r.slug, r.option_id]))
+
+  const active = new Map<string, string>()
+  for (const rule of DISQUALIFIERS) {
+    const options = fieldsByKey[rule.key] ?? []
+    const match = options.find(o => o.text.toLowerCase().trim() === rule.matchText.toLowerCase())
+    const existingId = known.get(rule.slug)
+
+    if (match) {
+      active.set(rule.slug, match.id)
+      if (match.id !== existingId) {
+        await pool.query(
+          `INSERT INTO tally_disqualifier_ids (slug, option_id, option_text, updated_at)
+           VALUES ($1, $2, $3, NOW())
+           ON CONFLICT (slug) DO UPDATE SET option_id = $2, option_text = $3, updated_at = NOW()`,
+          [rule.slug, match.id, match.text],
+        )
+      }
+    } else if (existingId) {
+      // Le texte ne matche plus MAIS on a déjà un id connu (reformulation
+      // trop importante pour matchText, ou dernière valeur connue) — on le
+      // garde : mieux vaut continuer à disqualifier sur l'ancien id que de
+      // perdre la règle silencieusement. L'alerte de dérive a déjà prévenu.
+      active.set(rule.slug, existingId)
+    }
+  }
+  return active
+}
+
+function detectDisqualification(
+  activeIdBySlug: Map<string, string>,
+  selectedIdsByKey: Record<string, string[]>,
+): string | null {
   const reasons: string[] = []
-  for (const [answer, key, label] of DISQUALIFIERS) {
-    const val = q[key]
-    if (val && val.toLowerCase().trim() === answer.toLowerCase()) {
-      reasons.push(`${label} : ${val}`)
+  for (const rule of DISQUALIFIERS) {
+    const activeId = activeIdBySlug.get(rule.slug)
+    const selected = selectedIdsByKey[rule.key] ?? []
+    if (activeId && selected.includes(activeId)) {
+      reasons.push(`${rule.label} : ${rule.matchText}`)
     }
   }
   return reasons.length > 0 ? reasons.join(' | ') : null
@@ -91,7 +223,6 @@ export async function POST(req: NextRequest) {
 
   const rawBody = await req.text()
 
-  // Validate signature — Tally sends HMAC-SHA256 as Base64 in 'tally-signature'
   const receivedSig = req.headers.get('tally-signature') ?? ''
   if (!validateSignature(rawBody, receivedSig, secret)) {
     console.warn('[webhooks/tally] Signature invalide')
@@ -105,20 +236,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'JSON invalide' }, { status: 400 })
   }
 
-  // Only handle form responses
   if (payload.eventType !== 'FORM_RESPONSE') {
     return NextResponse.json({ ok: true })
   }
 
   const fields = payload.data?.fields ?? []
 
-  // Build nom (Prénom + Nom de famille)
   const prenom = extractByLabel(fields, 'Prénom') ?? ''
   const nomFamille = extractByLabel(fields, 'Nom de famille') ?? ''
   const nom = `${prenom} ${nomFamille}`.trim()
   const email = (extractByLabel(fields, 'Adresse e-mail') ?? '').toLowerCase().trim()
 
-  // Validate required fields — return 200 silently (Tally retries on non-2xx)
   if (!nom || !email) {
     console.warn('[webhooks/tally] Champs requis manquants', { nom, email })
     return NextResponse.json({ ok: true })
@@ -136,15 +264,27 @@ export async function POST(req: NextRequest) {
     delai_demarrage: extractByLabelContains(fields, 'quel délai') ?? undefined,
   } as Record<string, string | undefined>
 
-  // Determine qualification
-  const disqualRaison = detectDisqualification(questionnaire)
+  // Surveillance des questions suivies : instantané + alerte si ça a changé,
+  // puis résolution des ids actifs pour la décision de qualification.
+  const fieldsByKey: Record<string, OptSnap[]> = {}
+  const selectedIdsByKey: Record<string, string[]> = {}
+  for (const [key, fragment] of Object.entries(FIELD_FRAGMENTS)) {
+    const field = findFieldByLabelContains(fields, fragment)
+    const options = normalizeOptions(field?.options)
+    fieldsByKey[key] = options
+    selectedIdsByKey[key] = selectedIds(field)
+    const rule = DISQUALIFIERS.find(r => r.key === key)
+    await checkFieldDrift(key, rule?.label ?? key, options)
+  }
+
+  const activeIdBySlug = await resolveActiveDisqualifierIds(fieldsByKey)
+  const disqualRaison = detectDisqualification(activeIdBySlug, selectedIdsByKey)
   const isQualifie = disqualRaison === null
 
   if (!isQualifie) {
     questionnaire.disqualification_raison = disqualRaison!
   }
 
-  // Check for existing lead (including archived — we update instead of ignore)
   const { rows: dups } = await pool.query(
     `SELECT id, archive, raison_archivage, statut FROM leads
      WHERE (email = $1 OR ($2::text IS NOT NULL AND telephone = $2))
@@ -158,7 +298,6 @@ export async function POST(req: NextRequest) {
       const wasNonQualifie = existing.raison_archivage === 'non_qualifie'
 
       if (wasNonQualifie && isQualifie) {
-        // Was disqualified, now qualifies → reactivate
         await pool.query(
           `UPDATE leads SET
              questionnaire = $2, objectifs = $3, problemes = $4,
@@ -171,7 +310,6 @@ export async function POST(req: NextRequest) {
         )
         console.log('[webhooks/tally] Lead réactivé (non_qualifie → qualifié):', email)
       } else {
-        // Already active or still disqualified → update questionnaire data only
         await pool.query(
           `UPDATE leads SET
              questionnaire = $2, objectifs = $3, problemes = $4,
@@ -183,7 +321,6 @@ export async function POST(req: NextRequest) {
         console.log('[webhooks/tally] Lead mis à jour (re-soumission):', email)
       }
     } else {
-      // New lead
       if (isQualifie) {
         await pool.query(
           `INSERT INTO leads (nom, email, telephone, source, objectifs, problemes, statut, questionnaire)
