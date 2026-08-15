@@ -244,8 +244,8 @@ async function notifyLeadQualifie(): Promise<void> {
   const lignes = summary
     ? [
         `${summary.leads} leads, ${summary.formulaires} formulaires ` +
-          `(${summary.qualifies} qualifiés), ${summary.reservations} appels réservés, ` +
-          `${summary.ventes} vente(s) — ${formatEUR(summary.depense)} dépensés aujourd'hui.`,
+          `(${summary.qualifies} qualifiés), ${summary.reservations} appels réservés ` +
+          `— ${formatEUR(summary.depense)} dépensés aujourd'hui.`,
       ]
     : ['Résumé indisponible (KPI injoignable).']
 
