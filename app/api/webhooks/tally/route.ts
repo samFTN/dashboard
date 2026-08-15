@@ -202,6 +202,14 @@ function detectDisqualification(
   return reasons.length > 0 ? reasons.join(' | ') : null
 }
 
+/** Notifie Samuel en temps réel dès qu'un lead devient qualifié. */
+async function notifyLeadQualifie(nom: string, email: string, objectifs: string | null): Promise<void> {
+  const lignes = [nom, email, objectifs ? `Objectif : ${objectifs}` : null].filter(Boolean)
+  await pushover(lignes.join('\n'), { title: '🎯 Nouveau lead qualifié' }).catch(e =>
+    console.error('[webhooks/tally] Échec alerte lead qualifié :', e),
+  )
+}
+
 function validateSignature(rawBody: string, received: string, secret: string): boolean {
   const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('base64')
   try {
@@ -309,6 +317,7 @@ export async function POST(req: NextRequest) {
           [existing.id, questionnaire, objectifs || null, problemes || null, telephone || null]
         )
         console.log('[webhooks/tally] Lead réactivé (non_qualifie → qualifié):', email)
+        await notifyLeadQualifie(nom, email, objectifs)
       } else {
         await pool.query(
           `UPDATE leads SET
@@ -327,6 +336,7 @@ export async function POST(req: NextRequest) {
            VALUES ($1, $2, $3, 'pub_meta', $4, $5, 'qualifie', $6)`,
           [nom, email, telephone || null, objectifs || null, problemes || null, questionnaire]
         )
+        await notifyLeadQualifie(nom, email, objectifs)
       } else {
         await pool.query(
           `INSERT INTO leads (nom, email, telephone, source, objectifs, problemes, statut, questionnaire,
