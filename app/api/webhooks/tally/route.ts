@@ -244,7 +244,7 @@ async function notifyLeadQualifie(): Promise<void> {
       ]
     : ['Résumé indisponible (KPI injoignable).']
 
-  await pushover(lignes.join('\n'), { title: '🎯 Nouveau lead qualifié' }).catch(e =>
+  await pushover(lignes.join('\n'), { title: 'Nouveau formulaire' }).catch(e =>
     console.error('[webhooks/tally] Échec alerte lead qualifié :', e),
   )
 }
