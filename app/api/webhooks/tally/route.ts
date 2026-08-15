@@ -238,19 +238,16 @@ async function fetchKpiSummary(): Promise<KpiSummary | null> {
  * résumé des KPI du jour — pas juste l'alerte brute. Si le KPI est
  * injoignable, la notification part quand même, sans le résumé.
  */
-async function notifyLeadQualifie(nom: string, email: string, objectifs: string | null): Promise<void> {
+async function notifyLeadQualifie(): Promise<void> {
   const summary = await fetchKpiSummary()
 
-  const lignes = [nom, email, objectifs ? `Objectif : ${objectifs}` : null].filter(Boolean) as string[]
-
-  if (summary) {
-    lignes.push('')
-    lignes.push(
-      `Aujourd'hui : ${summary.leads} leads, ${summary.formulaires} formulaires ` +
-        `(${summary.qualifies} qualifiés), ${summary.reservations} appels réservés, ` +
-        `${summary.ventes} vente(s) — ${formatEUR(summary.depense)} dépensés.`,
-    )
-  }
+  const lignes = summary
+    ? [
+        `${summary.leads} leads, ${summary.formulaires} formulaires ` +
+          `(${summary.qualifies} qualifiés), ${summary.reservations} appels réservés, ` +
+          `${summary.ventes} vente(s) — ${formatEUR(summary.depense)} dépensés aujourd'hui.`,
+      ]
+    : ['Résumé indisponible (KPI injoignable).']
 
   await pushover(lignes.join('\n'), { title: '🎯 Nouveau lead qualifié' }).catch(e =>
     console.error('[webhooks/tally] Échec alerte lead qualifié :', e),
@@ -364,7 +361,7 @@ export async function POST(req: NextRequest) {
           [existing.id, questionnaire, objectifs || null, problemes || null, telephone || null]
         )
         console.log('[webhooks/tally] Lead réactivé (non_qualifie → qualifié):', email)
-        await notifyLeadQualifie(nom, email, objectifs)
+        await notifyLeadQualifie()
       } else {
         await pool.query(
           `UPDATE leads SET
@@ -383,7 +380,7 @@ export async function POST(req: NextRequest) {
            VALUES ($1, $2, $3, 'pub_meta', $4, $5, 'qualifie', $6)`,
           [nom, email, telephone || null, objectifs || null, problemes || null, questionnaire]
         )
-        await notifyLeadQualifie(nom, email, objectifs)
+        await notifyLeadQualifie()
       } else {
         await pool.query(
           `INSERT INTO leads (nom, email, telephone, source, objectifs, problemes, statut, questionnaire,
