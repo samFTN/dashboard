@@ -22,7 +22,7 @@ const DISQUALIFIERS: [string, string, string][] = [
   ["Je n'ai pas encore commencé", 'anciennete', 'Ancienneté guitare'],
   ['Moins de 3 mois', 'anciennete', 'Ancienneté guitare'],
   ["Non, je veux seulement des cours à l'heure", 'adhesion_programme', 'Programme Guitarisation'],
-  ['Je viens pour avoir quelques conseils pour progresser de mon côté', 'attentes_cours', "Attentes cours d'essai"],
+  ['Je viens seulement pour avoir quelques conseils pour progresser de mon côté', 'attentes_cours', "Attentes cours d'essai"],
   ["Ce n'est pas le bon moment pour moi", 'delai_demarrage', 'Délai démarrage'],
 ]
 
