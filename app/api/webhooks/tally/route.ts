@@ -202,9 +202,56 @@ function detectDisqualification(
   return reasons.length > 0 ? reasons.join(' | ') : null
 }
 
-/** Notifie Samuel en temps réel dès qu'un lead devient qualifié. */
+interface KpiSummary {
+  depense: number
+  leads: number
+  formulaires: number
+  qualifies: number
+  reservations: number
+  ventes: number
+}
+
+function formatEUR(n: number): string {
+  return n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 })
+}
+
+/** Chiffres du jour depuis le KPI — best-effort, jamais bloquant. */
+async function fetchKpiSummary(): Promise<KpiSummary | null> {
+  const url = process.env.KPI_API_URL
+  const secret = process.env.KPI_API_SECRET
+  if (!url || !secret) return null
+  try {
+    const res = await fetch(`${url}/api/summary`, {
+      headers: { 'x-api-secret': secret },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    return (await res.json()) as KpiSummary
+  } catch (e) {
+    console.error('[webhooks/tally] Échec récupération résumé KPI :', e)
+    return null
+  }
+}
+
+/**
+ * Notifie Samuel en temps réel dès qu'un lead devient qualifié, avec le
+ * résumé des KPI du jour — pas juste l'alerte brute. Si le KPI est
+ * injoignable, la notification part quand même, sans le résumé.
+ */
 async function notifyLeadQualifie(nom: string, email: string, objectifs: string | null): Promise<void> {
-  const lignes = [nom, email, objectifs ? `Objectif : ${objectifs}` : null].filter(Boolean)
+  const summary = await fetchKpiSummary()
+
+  const lignes = [nom, email, objectifs ? `Objectif : ${objectifs}` : null].filter(Boolean) as string[]
+
+  if (summary) {
+    lignes.push('')
+    lignes.push(
+      `Aujourd'hui : ${summary.leads} leads, ${summary.formulaires} formulaires ` +
+        `(${summary.qualifies} qualifiés), ${summary.reservations} appels réservés, ` +
+        `${summary.ventes} vente(s) — ${formatEUR(summary.depense)} dépensés.`,
+    )
+  }
+
   await pushover(lignes.join('\n'), { title: '🎯 Nouveau lead qualifié' }).catch(e =>
     console.error('[webhooks/tally] Échec alerte lead qualifié :', e),
   )
