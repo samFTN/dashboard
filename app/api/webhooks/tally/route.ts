@@ -211,10 +211,6 @@ interface KpiSummary {
   ventes: number
 }
 
-function formatEUR(n: number): string {
-  return n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 })
-}
-
 /** Chiffres du jour depuis le KPI — best-effort, jamais bloquant. */
 async function fetchKpiSummary(): Promise<KpiSummary | null> {
   const url = process.env.KPI_API_URL
@@ -243,9 +239,8 @@ async function notifyLeadQualifie(): Promise<void> {
 
   const lignes = summary
     ? [
-        `${summary.leads} leads, ${summary.formulaires} formulaires ` +
-          `(${summary.qualifies} qualifiés), ${summary.reservations} appels réservés ` +
-          `— ${formatEUR(summary.depense)} dépensés aujourd'hui.`,
+        `Aujourd'hui : ${summary.leads} leads, ${summary.formulaires} formulaires ` +
+          `(${summary.qualifies} qualifiés), ${summary.reservations} appels réservés.`,
       ]
     : ['Résumé indisponible (KPI injoignable).']
 
