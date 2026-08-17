@@ -233,6 +233,7 @@ async function fetchKpiSummary(): Promise<KpiSummary | null> {
  * Notifie Samuel en temps réel dès qu'un lead devient qualifié, avec le
  * résumé des KPI du jour — pas juste l'alerte brute. Si le KPI est
  * injoignable, la notification part quand même, sans le résumé.
+ * Envoie une première notification immédiate, puis une mise à jour après 5 min.
  */
 async function notifyLeadQualifie(): Promise<void> {
   const summary = await fetchKpiSummary()
@@ -247,6 +248,26 @@ async function notifyLeadQualifie(): Promise<void> {
   await pushover(lignes.join('\n'), { title: 'Nouveau formulaire' }).catch(e =>
     console.error('[webhooks/tally] Échec alerte lead qualifié :', e),
   )
+
+  // Notification mise à jour après 5 minutes pour voir si un appel a été réservé
+  setTimeout(async () => {
+    const updatedSummary = await fetchKpiSummary().catch(() => summary)
+    if (updatedSummary) {
+      // Affiche seulement s'il y a eu un changement (appel réservé, etc.)
+      if (
+        updatedSummary.reservations > (summary?.reservations ?? 0) ||
+        updatedSummary.qualifies > (summary?.qualifies ?? 0)
+      ) {
+        const updatedLines = [
+          `Mise à jour (5 min après) : ${updatedSummary.leads} leads, ${updatedSummary.formulaires} formulaires ` +
+            `(${updatedSummary.qualifies} qualifiés), ${updatedSummary.reservations} appels réservés.`,
+        ]
+        await pushover(updatedLines.join('\n'), { title: '📈 Mise à jour formulaires' }).catch(e =>
+          console.error('[webhooks/tally] Échec alerte mise à jour :', e),
+        )
+      }
+    }
+  }, 5 * 60 * 1000) // 5 minutes
 }
 
 function validateSignature(rawBody: string, received: string, secret: string): boolean {
