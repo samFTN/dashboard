@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import LeadPanel from './LeadPanel'
+import SwipeableLeadCard from './SwipeableLeadCard'
 
 export type LeadRow = {
   id: string
@@ -255,6 +256,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
   const [pullY, setPullY] = useState(0)
   const [isPulling, setIsPulling] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null)
   const touchStartY = useRef(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const filtersRef = useRef({ showArchived, filterStatut, filterSource })
@@ -352,6 +354,21 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
       dernier_contact_date: action.date <= new Date().toISOString().slice(0, 10) ? action.date : selectedLead?.dernier_contact_date ?? null,
     }
     handleLeadChanged(changes)
+  }
+
+  function handleQuickActionAdded(leadId: string, action: LeadRow['journal'][0]) {
+    setLeads(prev => prev.map(l => l.id === leadId
+      ? { ...l, journal: [action, ...l.journal], dernier_contact_date: action.date }
+      : l))
+  }
+
+  function handleQuickStatutChanged(leadId: string, statut: string) {
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, statut } : l))
+  }
+
+  function handleQuickArchived(leadId: string) {
+    setLeads(prev => prev.filter(l => l.id !== leadId))
+    setSelectedLead(prev => prev?.id === leadId ? null : prev)
   }
 
   const selectStyle = {
@@ -631,56 +648,39 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                 })
                 return filtered
               })().map((lead) => {
-                const actionType = lead.prochaine_action_type
-                  ?? (lead.statut === 'reserve' && lead.cours_essai_date ? 'cours_essai' : null)
-                const actionDate = lead.prochaine_action_date
-                  ?? (lead.statut === 'reserve' ? lead.cours_essai_date : null)
-                return (
-                  <div
-                    key={lead.id}
-                    onClick={() => setSelectedLead(lead)}
-                    className="p-3 rounded-xl cursor-pointer transition-all"
-                    style={{
-                      background: selectedLead?.id === lead.id ? 'var(--accent-soft)' : 'var(--card)',
-                      border: `1px solid ${selectedLead?.id === lead.id ? 'var(--accent)' : 'var(--border)'}`,
-                    }}
-                  >
-                    {/* Nom + Email */}
-                    <p className="font-semibold text-sm" style={{ color: 'var(--dark)' }}>{lead.nom}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--muted2)' }}>{lead.email}</p>
-
-                    {/* Badge statut + source */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <StatusBadge statut={lead.raison_archivage === 'non_qualifie' ? 'non_qualifie' : lead.statut} />
-                      <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg)', color: 'var(--muted2)' }}>
-                        {lead.source === 'pub_meta' ? 'Meta Ads' : 'Organique'}
-                      </span>
+                if (showArchived) {
+                  return (
+                    <div
+                      key={lead.id}
+                      onClick={() => setSelectedLead(lead)}
+                      className="p-3 rounded-xl cursor-pointer transition-all"
+                      style={{
+                        background: selectedLead?.id === lead.id ? 'var(--accent-soft)' : 'var(--card)',
+                        border: `1px solid ${selectedLead?.id === lead.id ? 'var(--accent)' : 'var(--border)'}`,
+                      }}
+                    >
+                      <p className="font-semibold text-sm" style={{ color: 'var(--dark)' }}>{lead.nom}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--muted2)' }}>{lead.email}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <StatusBadge statut={lead.raison_archivage === 'non_qualifie' ? 'non_qualifie' : lead.statut} />
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg)', color: 'var(--muted2)' }}>
+                          {lead.source === 'pub_meta' ? 'Meta Ads' : 'Organique'}
+                        </span>
+                      </div>
                     </div>
-
-                    {/* Prochaine action */}
-                    {actionType ? (
-                      <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-                        <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
-                          {({'appel': 'Appel', 'sms': 'SMS', 'whatsapp': 'WhatsApp', 'mail': 'Mail', 'cours_essai': "Cours d'essai", 'cours_offert': 'Cours offert', 'temoignage': 'Témoignage'} as Record<string,string>)[actionType] ?? actionType}
-                        </p>
-                        <p className="text-xs" style={{ color: 'var(--muted2)' }}>
-                          {fmt(actionDate)}
-                          {actionDate && (() => {
-                            const d = new Date(actionDate)
-                            const t = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
-                            return t !== '00:00' ? <span className="ml-1" style={{ color: 'var(--muted)' }}>à {t}</span> : null
-                          })()}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-                        <p className="text-xs" style={{ color: 'var(--muted)' }}>Aucune action planifiée</p>
-                      </div>
-                    )}
-
-                    {/* Dernier contact */}
-                    <p className="text-xs mt-2" style={{ color: 'var(--muted)' }}>Dernier contact : {timeAgo(lead.dernier_contact_date)}</p>
-                  </div>
+                  )
+                }
+                return (
+                  <SwipeableLeadCard
+                    key={lead.id}
+                    lead={lead}
+                    onOpen={() => setSelectedLead(lead)}
+                    onQuickAction={handleQuickActionAdded}
+                    onQuickStatut={handleQuickStatutChanged}
+                    onQuickArchive={handleQuickArchived}
+                    isOpen={openSwipeId === lead.id}
+                    onSwipeOpen={setOpenSwipeId}
+                  />
                 )
               })}
             </div>
