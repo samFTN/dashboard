@@ -89,6 +89,7 @@ export default function SwipeableLeadCard({
   onSwipeOpen: (leadId: string | null) => void
 }) {
   const [swipeX, setSwipeX] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
   const [showArchiveReasons, setShowArchiveReasons] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -99,7 +100,6 @@ export default function SwipeableLeadCard({
   const actionDate = lead.prochaine_action_date ?? (lead.statut === 'reserve' ? lead.cours_essai_date : null)
 
   function onTouchStart(e: React.TouchEvent) {
-    if (swipeX !== 0) return
     touchStartX.current = e.touches[0].clientX
     setError(null)
   }
@@ -107,24 +107,26 @@ export default function SwipeableLeadCard({
   function onTouchMove(e: React.TouchEvent) {
     if (!touchStartX.current) return
     const delta = e.touches[0].clientX - touchStartX.current
-    if (Math.abs(delta) > 10) {
-      setSwipeX(Math.max(-80, Math.min(80, delta * 0.5)))
+    if (Math.abs(delta) > 5) {
+      setIsDragging(true)
+      setSwipeX(Math.max(-150, Math.min(150, delta * 0.6)))
     }
   }
 
   function onTouchEnd() {
-    if (Math.abs(swipeX) > 40) {
+    setIsDragging(false)
+    if (Math.abs(swipeX) > 60) {
       const direction = swipeX > 0 ? 'right' : 'left'
       if (direction === 'left') {
-        setSwipeX(-80)
+        setSwipeX(-150)
         onSwipeOpen(lead.id)
         setShowArchiveReasons(false)
       } else {
-        setSwipeX(80)
+        setSwipeX(150)
         onSwipeOpen(lead.id)
         setShowArchiveReasons(false)
       }
-    } else if (Math.abs(swipeX) < 10) {
+    } else if (Math.abs(swipeX) < 5) {
       onOpen()
     } else {
       setSwipeX(0)
@@ -204,40 +206,47 @@ export default function SwipeableLeadCard({
   return (
     <div
       ref={cardRef}
-      className="relative overflow-hidden rounded-xl border cursor-pointer transition-all"
+      className="relative overflow-hidden rounded-xl cursor-pointer"
       style={{
-        borderColor: isOpen ? 'var(--accent)' : 'var(--border)',
         background: 'var(--card)',
+        height: '160px',
       }}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {/* Fond d'actions (gauche et droite) */}
-      <div className="absolute inset-0 flex justify-between px-3 py-3 pointer-events-none">
-        {/* Actions gauche */}
-        <div className="flex items-center gap-2 opacity-0" style={{ opacity: swipeX < -20 ? 0.8 : 0 }}>
-          <button className="text-xs px-2 py-1 rounded bg-blue-500 text-white font-semibold" disabled>
-            📞
-          </button>
-          <button className="text-xs px-2 py-1 rounded bg-green-500 text-white font-semibold" disabled>
-            →
-          </button>
-        </div>
-        {/* Actions droite */}
-        <div className="flex items-center gap-2 justify-end opacity-0" style={{ opacity: swipeX > 20 ? 0.8 : 0 }}>
-          <button className="text-xs px-2 py-1 rounded bg-red-500 text-white font-semibold" disabled>
-            🗄️
-          </button>
-        </div>
+      {/* Fond d'actions (gauche) */}
+      <div className="absolute inset-y-0 left-0 flex items-center gap-2 px-3" style={{ width: '150px', background: '#3b82f6' }}>
+        <button className="text-sm px-3 py-2 rounded text-white font-semibold w-full text-center leading-tight" disabled>
+          📞<br />Appel
+        </button>
       </div>
 
-      {/* Contenu principal */}
+      {/* Second bouton gauche */}
       <div
-        className="relative p-3 bg-white"
+        className="absolute inset-y-0 flex items-center px-3"
+        style={{ width: '150px', left: '150px', background: '#10b981' }}
+      >
+        <button className="text-sm px-3 py-2 rounded text-white font-semibold w-full text-center leading-tight" disabled>
+          →<br />Suivant
+        </button>
+      </div>
+
+      {/* Fond d'actions (droite) */}
+      <div className="absolute inset-y-0 right-0 flex items-center px-3" style={{ width: '150px', background: '#ef4444' }}>
+        <button className="text-sm px-3 py-2 rounded text-white font-semibold w-full text-center leading-tight" disabled>
+          🗄️<br />Archiver
+        </button>
+      </div>
+
+      {/* Contenu principal (carte) */}
+      <div
+        className="absolute inset-0 p-3 rounded-xl"
         style={{
+          background: 'var(--card)',
           transform: `translateX(${swipeX}px)`,
-          transition: swipeX === 0 ? 'transform 0.2s' : 'none',
+          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          border: `1px solid var(--border)`,
         }}
       >
         {/* Nom + Email */}
@@ -302,78 +311,79 @@ export default function SwipeableLeadCard({
         {error && <p className="text-xs mt-2 text-red-600">{error}</p>}
       </div>
 
-      {/* Plateau d'actions au swipe */}
-      {isOpen && (
-        <div
-          className="absolute inset-0 flex items-stretch pointer-events-auto"
-          style={{
-            zIndex: 10,
-            transform: `translateX(${swipeX}px)`,
-            transition: 'none',
-          }}
-        >
-          {/* Actions gauche */}
-          <div className="flex items-center gap-1 pl-3 flex-1" style={{ visibility: swipeX < -20 ? 'visible' : 'hidden' }}>
-            <button
-              onClick={handleQuickCall}
-              disabled={loading}
-              className="text-xs px-2 py-1 rounded text-white font-semibold"
-              style={{
-                background: loading ? '#ccc' : '#3b82f6',
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              📞 Appel
-            </button>
-            <button
-              onClick={handleNextStatut}
-              disabled={loading}
-              className="text-xs px-2 py-1 rounded text-white font-semibold"
-              style={{
-                background: loading ? '#ccc' : '#10b981',
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              → Suivant
-            </button>
-          </div>
-
-          {/* Actions droite */}
-          <div className="flex items-center gap-1 pr-3 justify-end flex-1" style={{ visibility: swipeX > 20 ? 'visible' : 'hidden' }}>
-            {!showArchiveReasons ? (
+      {/* Boutons d'action pointer-events (superposés sur le fond) */}
+      {isOpen && Math.abs(swipeX) > 60 && (
+        <>
+          {swipeX < -60 && (
+            <>
               <button
-                onClick={() => setShowArchiveReasons(true)}
+                onClick={handleQuickCall}
                 disabled={loading}
-                className="text-xs px-2 py-1 rounded text-white font-semibold"
+                className="absolute left-0 top-0 h-full flex items-center justify-center text-white font-semibold"
                 style={{
-                  background: loading ? '#ccc' : '#ef4444',
-                  opacity: loading ? 0.6 : 1,
+                  width: '150px',
+                  background: '#3b82f6',
+                  zIndex: 20,
+                  opacity: loading ? 0.7 : 1,
+                  pointerEvents: 'auto',
                 }}
               >
-                🗄️ Archiver
+                📞
               </button>
-            ) : (
-              <select
-                onChange={e => handleArchiveWithReason(e.target.value)}
+              <button
+                onClick={handleNextStatut}
                 disabled={loading}
-                className="text-xs px-2 py-1 rounded"
+                className="absolute left-[150px] top-0 h-full flex items-center justify-center text-white font-semibold"
                 style={{
-                  background: 'white',
-                  borderColor: 'var(--border)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--dark)',
+                  width: '150px',
+                  background: '#10b981',
+                  zIndex: 20,
+                  opacity: loading ? 0.7 : 1,
+                  pointerEvents: 'auto',
                 }}
               >
-                <option value="">Choisir raison...</option>
-                {ARCHIVE_REASONS.map(r => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-        </div>
+                →
+              </button>
+            </>
+          )}
+          {swipeX > 60 && (
+            <button
+              onClick={() => setShowArchiveReasons(true)}
+              disabled={loading}
+              className="absolute right-0 top-0 h-full w-[150px] flex items-center justify-center text-white font-semibold"
+              style={{
+                background: '#ef4444',
+                zIndex: 20,
+                opacity: loading ? 0.7 : 1,
+                pointerEvents: 'auto',
+              }}
+            >
+              🗄️
+            </button>
+          )}
+          {showArchiveReasons && swipeX > 60 && (
+            <select
+              onChange={e => handleArchiveWithReason(e.target.value)}
+              disabled={loading}
+              className="absolute right-0 top-0 h-full w-[150px]"
+              style={{
+                background: '#ef4444',
+                border: 'none',
+                color: 'white',
+                zIndex: 21,
+                pointerEvents: 'auto',
+              }}
+              autoFocus
+            >
+              <option value="">Raison...</option>
+              {ARCHIVE_REASONS.map(r => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </>
       )}
     </div>
   )
