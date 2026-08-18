@@ -115,14 +115,14 @@ export default function SwipeableLeadCard({
 
   function onTouchEnd() {
     setIsDragging(false)
-    if (Math.abs(swipeX) > 60) {
+    if (Math.abs(swipeX) > 50) {
       const direction = swipeX > 0 ? 'right' : 'left'
-      if (direction === 'left') {
-        setSwipeX(-150)
+      if (direction === 'right') {
+        setSwipeX(120)
         onSwipeOpen(lead.id)
         setShowArchiveReasons(false)
       } else {
-        setSwipeX(150)
+        setSwipeX(-120)
         onSwipeOpen(lead.id)
         setShowArchiveReasons(false)
       }
@@ -206,137 +206,92 @@ export default function SwipeableLeadCard({
   return (
     <div
       ref={cardRef}
-      className="relative overflow-hidden rounded-xl cursor-pointer"
+      className="relative overflow-hidden rounded-lg cursor-pointer"
       style={{
         background: 'var(--card)',
-        height: '160px',
+        height: '120px',
       }}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {/* Fond d'actions (gauche) */}
-      <div className="absolute inset-y-0 left-0 flex items-center gap-2 px-3" style={{ width: '150px', background: '#3b82f6' }}>
-        <button className="text-sm px-3 py-2 rounded text-white font-semibold w-full text-center leading-tight" disabled>
-          📞<br />Appel
-        </button>
+      {/* Fond d'actions (droite) - appel + suivant */}
+      <div className="absolute inset-y-0 right-0 flex items-stretch" style={{ background: 'linear-gradient(to left, #3b82f6, #10b981)' }}>
+        <div className="flex-1 flex items-center justify-center text-white text-xs font-semibold opacity-60" style={{ width: '80px' }}>
+          📞
+        </div>
+        <div className="flex-1 flex items-center justify-center text-white text-xs font-semibold opacity-60" style={{ width: '80px' }}>
+          →
+        </div>
       </div>
 
-      {/* Second bouton gauche */}
-      <div
-        className="absolute inset-y-0 flex items-center px-3"
-        style={{ width: '150px', left: '150px', background: '#10b981' }}
-      >
-        <button className="text-sm px-3 py-2 rounded text-white font-semibold w-full text-center leading-tight" disabled>
-          →<br />Suivant
-        </button>
-      </div>
-
-      {/* Fond d'actions (droite) */}
-      <div className="absolute inset-y-0 right-0 flex items-center px-3" style={{ width: '150px', background: '#ef4444' }}>
-        <button className="text-sm px-3 py-2 rounded text-white font-semibold w-full text-center leading-tight" disabled>
-          🗄️<br />Archiver
-        </button>
+      {/* Fond d'actions (gauche) - archiver */}
+      <div className="absolute inset-y-0 left-0 flex items-center justify-center" style={{ width: '80px', background: '#ef4444' }}>
+        <span className="text-white text-xs font-semibold opacity-60">🗄️</span>
       </div>
 
       {/* Contenu principal (carte) */}
       <div
-        className="absolute inset-0 p-3 rounded-xl"
+        className="absolute inset-0 p-2.5 rounded-lg"
         style={{
           background: 'var(--card)',
           transform: `translateX(${swipeX}px)`,
           transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
           border: `1px solid var(--border)`,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
         }}
       >
-        {/* Nom + Email */}
-        <p className="font-semibold text-sm" style={{ color: 'var(--dark)' }}>
-          {lead.nom}
-        </p>
-        <p className="text-xs mt-0.5" style={{ color: 'var(--muted2)' }}>
-          {lead.email}
-        </p>
+        <div>
+          {/* Nom + Email */}
+          <p className="font-semibold text-sm leading-tight" style={{ color: 'var(--dark)' }}>
+            {lead.nom}
+          </p>
+          <p className="text-[11px] mt-0.5 leading-tight" style={{ color: 'var(--muted2)' }}>
+            {lead.email}
+          </p>
 
-        {/* Badge statut + source */}
-        <div className="flex items-center gap-2 mt-2">
-          <StatusBadge statut={lead.raison_archivage === 'non_qualifie' ? 'non_qualifie' : lead.statut} />
-          <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg)', color: 'var(--muted2)' }}>
-            {lead.source === 'pub_meta' ? 'Meta Ads' : 'Organique'}
-          </span>
+          {/* Badge statut + source */}
+          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+            <StatusBadge statut={lead.raison_archivage === 'non_qualifie' ? 'non_qualifie' : lead.statut} />
+            <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg)', color: 'var(--muted2)' }}>
+              {lead.source === 'pub_meta' ? 'Meta Ads' : 'Org'}
+            </span>
+          </div>
         </div>
 
-        {/* Prochaine action */}
-        {actionType ? (
-          <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-            <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
+        {/* Prochaine action (compacte) */}
+        <div className="text-[10px] leading-tight" style={{ color: 'var(--muted2)' }}>
+          {actionType ? (
+            <p style={{ color: 'var(--accent)' }}>
               {
                 {
-                  appel: 'Appel',
-                  sms: 'SMS',
-                  whatsapp: 'WhatsApp',
-                  mail: 'Mail',
-                  cours_essai: "Cours d'essai",
-                  cours_offert: 'Cours offert',
-                  temoignage: 'Témoignage',
-                }[actionType] ?? actionType
-              }
-            </p>
-            <p className="text-xs" style={{ color: 'var(--muted2)' }}>
+                  appel: '📞',
+                  sms: '📱',
+                  whatsapp: '💬',
+                  mail: '📧',
+                  cours_essai: '🎸',
+                  cours_offert: '🎁',
+                  temoignage: '⭐',
+                }[actionType] ?? '—'
+              }{' '}
               {actionDate && new Date(actionDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-              {actionDate && (() => {
-                const d = new Date(actionDate)
-                const t = new Intl.DateTimeFormat('en-GB', {
-                  timeZone: 'Europe/Paris',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false,
-                }).format(d)
-                return t !== '00:00' ? <span className="ml-1" style={{ color: 'var(--muted)' }}>à {t}</span> : null
-              })()}
             </p>
-          </div>
-        ) : (
-          <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-            <p className="text-xs" style={{ color: 'var(--muted)' }}>
-              Aucune action planifiée
-            </p>
-          </div>
-        )}
+          ) : (
+            <p>—</p>
+          )}
+        </div>
 
-        {/* Dernier contact */}
-        <p className="text-xs mt-2" style={{ color: 'var(--muted)' }}>
-          Dernier contact : {timeAgo(lead.dernier_contact_date)}
-        </p>
-
-        {error && <p className="text-xs mt-2 text-red-600">{error}</p>}
+        {error && <p className="text-[10px] text-red-600">{error}</p>}
       </div>
 
       {/* Overlay clickable pour les actions (uniquement au swipe max) */}
-      {swipeX < -140 && (
-        <div className="absolute inset-0 flex" style={{ zIndex: 30, pointerEvents: 'none' }}>
-          <button
-            onClick={handleQuickCall}
-            disabled={loading}
-            className="flex-1 flex items-center justify-center"
-            style={{
-              pointerEvents: 'auto',
-            }}
-          />
-          <button
-            onClick={handleNextStatut}
-            disabled={loading}
-            className="flex-1 flex items-center justify-center"
-            style={{
-              pointerEvents: 'auto',
-            }}
-          />
-        </div>
-      )}
-      {swipeX > 140 && (
+      {swipeX < -100 && (
         <div
-          className="absolute right-0 top-0 h-full flex items-center justify-center"
+          className="absolute left-0 top-0 h-full"
           style={{
-            width: '150px',
+            width: '80px',
             zIndex: 30,
             pointerEvents: 'auto',
           }}
@@ -351,18 +306,17 @@ export default function SwipeableLeadCard({
             <select
               onChange={e => handleArchiveWithReason(e.target.value)}
               disabled={loading}
-              className="w-full h-full text-center"
+              className="w-full h-full text-center text-[10px]"
               style={{
                 background: 'transparent',
                 border: 'none',
                 color: 'white',
-                fontSize: '12px',
                 fontWeight: 'bold',
               }}
               autoFocus
             >
               <option value="" style={{ color: 'black' }}>
-                Raison...
+                Raison
               </option>
               {ARCHIVE_REASONS.map(r => (
                 <option key={r.value} value={r.value} style={{ color: 'black' }}>
@@ -371,6 +325,28 @@ export default function SwipeableLeadCard({
               ))}
             </select>
           )}
+        </div>
+      )}
+      {swipeX > 100 && (
+        <div className="absolute right-0 top-0 h-full flex" style={{ zIndex: 30, pointerEvents: 'none' }}>
+          <button
+            onClick={handleQuickCall}
+            disabled={loading}
+            className="flex-1 flex items-center justify-center"
+            style={{
+              width: '80px',
+              pointerEvents: 'auto',
+            }}
+          />
+          <button
+            onClick={handleNextStatut}
+            disabled={loading}
+            className="flex-1 flex items-center justify-center"
+            style={{
+              width: '80px',
+              pointerEvents: 'auto',
+            }}
+          />
         </div>
       )}
     </div>
