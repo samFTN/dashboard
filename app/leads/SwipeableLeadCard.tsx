@@ -56,6 +56,11 @@ function StatusBadge({ statut }: { statut: string }) {
   )
 }
 
+function fmt(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+}
+
 export default function SwipeableLeadCard({
   lead,
   onOpen,
@@ -150,13 +155,39 @@ export default function SwipeableLeadCard({
         {lead.email}
       </p>
 
-      {/* Statut + dernier contact */}
+      {/* Statut */}
       <div className="flex items-center gap-2 mb-3">
         <StatusBadge statut={lead.statut} />
-        <span style={{ fontSize: '10px', color: 'var(--muted)', background: 'var(--bg)', padding: '2px 6px', borderRadius: '4px' }}>
-          {lead.dernier_contact_date ? new Date(lead.dernier_contact_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '—'}
-        </span>
       </div>
+
+      {/* Prochaine action - affichée en évidence */}
+      {(() => {
+        const actionType = lead.prochaine_action_type
+          ?? (lead.statut === 'reserve' && lead.cours_essai_date ? 'cours_essai' : null)
+        const actionDate = lead.prochaine_action_date
+          ?? (lead.statut === 'reserve' ? lead.cours_essai_date : null)
+        if (!actionType) return null
+        const typeLabel = {
+          'appel': 'Appel',
+          'sms': 'SMS',
+          'whatsapp': 'WhatsApp',
+          'mail': 'Mail',
+          'cours_essai': "Cours d'essai",
+          'cours_offert': 'Cours offert',
+          'temoignage': 'Témoignage'
+        }[actionType] ?? actionType
+        return (
+          <div className="mb-3 p-2 rounded-lg" style={{ background: 'var(--accent-soft)', border: '1px solid #fde68a' }}>
+            <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--muted)', marginBottom: 3 }}>Prochaine action</p>
+            <p className="text-xs font-semibold" style={{ color: 'var(--accent)', marginBottom: 1 }}>
+              {typeLabel}
+            </p>
+            <p className="text-xs" style={{ color: 'var(--muted2)' }}>
+              {fmt(actionDate)}
+            </p>
+          </div>
+        )
+      })()}
 
       {/* Actions - 3 boutons simples et cliquables */}
       <div className="flex gap-2" onClick={e => e.stopPropagation()}>
