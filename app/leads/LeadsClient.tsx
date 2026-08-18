@@ -490,7 +490,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
         </div>
       )}
 
-      {/* Table */}
+      {/* Table / List */}
       <div
         ref={scrollRef}
         className="flex-1 overflow-auto px-4 md:px-8 py-4 md:py-5"
@@ -504,121 +504,188 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
             {isRefreshing ? '⟳ Actualisation...' : pullY >= 60 ? '↑ Relâcher' : '↓ Tirer pour actualiser'}
           </div>
         )}
-        <div
-          className="rounded-2xl overflow-hidden overflow-x-auto"
-          style={{ border: '1px solid var(--border)', background: 'var(--card)' }}
-        >
-          <table className="w-full text-sm border-collapse" style={{ minWidth: 560 }}>
-            <thead>
-              <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 1 }}>
-                {['Nom', 'Statut', 'Source', 'Entrée', 'Dernier contact'].map(col => (
-                  <th
-                    key={col}
-                    className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--muted2)' }}
-                  >
-                    {col}
-                  </th>
-                ))}
-                <th
-                  className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider cursor-pointer select-none"
-                  style={{ color: 'var(--muted2)' }}
-                  onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
-                >
-                  Prochaine action {sortDir === 'asc' ? '↑' : '↓'}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {leads.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center text-sm" style={{ color: 'var(--muted)' }}>
-                    Aucun lead {showArchived ? 'archivé' : 'actif'}
-                  </td>
-                </tr>
-              ) : (
-                (() => {
-                  const filtered = leads.filter(l => !filterAujourdhui || l.prochaine_action_date?.slice(0, 10) === today)
-                  filtered.sort((a, b) => {
-                    const da = a.prochaine_action_date ?? (a.statut === 'reserve' ? a.cours_essai_date : null)
-                    const db = b.prochaine_action_date ?? (b.statut === 'reserve' ? b.cours_essai_date : null)
-                    if (!da && !db) return 0
-                    if (!da) return -1
-                    if (!db) return 1
-                    return sortDir === 'asc' ? da.localeCompare(db) : db.localeCompare(da)
-                  })
-                  return filtered
-                })().map((lead, i) => (
-                  <tr
+
+        {leads.length === 0 ? (
+          <div className="text-center py-16" style={{ color: 'var(--muted)' }}>
+            <p className="text-sm">Aucun lead {showArchived ? 'archivé' : 'actif'}</p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop: Tableau */}
+            <div className="hidden md:block rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'var(--card)' }}>
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 1 }}>
+                    {['Nom', 'Statut', 'Source', 'Entrée', 'Dernier contact'].map(col => (
+                      <th
+                        key={col}
+                        className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider"
+                        style={{ color: 'var(--muted2)' }}
+                      >
+                        {col}
+                      </th>
+                    ))}
+                    <th
+                      className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider cursor-pointer select-none"
+                      style={{ color: 'var(--muted2)' }}
+                      onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                    >
+                      Prochaine action {sortDir === 'asc' ? '↑' : '↓'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const filtered = leads.filter(l => !filterAujourdhui || l.prochaine_action_date?.slice(0, 10) === today)
+                    filtered.sort((a, b) => {
+                      const da = a.prochaine_action_date ?? (a.statut === 'reserve' ? a.cours_essai_date : null)
+                      const db = b.prochaine_action_date ?? (b.statut === 'reserve' ? b.cours_essai_date : null)
+                      if (!da && !db) return 0
+                      if (!da) return -1
+                      if (!db) return 1
+                      return sortDir === 'asc' ? da.localeCompare(db) : db.localeCompare(da)
+                    })
+                    return filtered
+                  })().map((lead, i) => (
+                    <tr
+                      key={lead.id}
+                      onClick={() => setSelectedLead(lead)}
+                      className="cursor-pointer transition-colors"
+                      style={{
+                        borderTop: i > 0 ? '1px solid var(--border2)' : undefined,
+                        background: selectedLead?.id === lead.id ? 'var(--accent-soft)' : undefined,
+                      }}
+                      onMouseEnter={e => {
+                        if (selectedLead?.id !== lead.id)
+                          (e.currentTarget as HTMLTableRowElement).style.background = 'var(--bg)'
+                      }}
+                      onMouseLeave={e => {
+                        if (selectedLead?.id !== lead.id)
+                          (e.currentTarget as HTMLTableRowElement).style.background = ''
+                      }}
+                    >
+                      <td className="px-4 py-3">
+                        <p className="font-semibold" style={{ color: 'var(--dark)' }}>{lead.nom}</p>
+                        <p className="text-xs" style={{ color: 'var(--muted2)' }}>{lead.email}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge statut={lead.raison_archivage === 'non_qualifie' ? 'non_qualifie' : lead.statut} />
+                        {lead.raison_archivage && lead.raison_archivage !== 'non_qualifie' && (
+                          <p className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>
+                            {lead.raison_archivage.replace(/_/g, ' ')}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
+                        {lead.source === 'pub_meta' ? 'Meta Ads' : 'Organique'}
+                      </td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
+                        {fmt(lead.created_at)}
+                      </td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
+                        {timeAgo(lead.dernier_contact_date)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {(() => {
+                          const actionType = lead.prochaine_action_type
+                            ?? (lead.statut === 'reserve' && lead.cours_essai_date ? 'cours_essai' : null)
+                          const actionDate = lead.prochaine_action_date
+                            ?? (lead.statut === 'reserve' ? lead.cours_essai_date : null)
+                          return actionType ? (
+                            <>
+                              <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
+                                {({'appel': 'Appel', 'sms': 'SMS', 'whatsapp': 'WhatsApp', 'mail': 'Mail', 'cours_essai': "Cours d'essai", 'cours_offert': 'Cours offert', 'temoignage': 'Témoignage'} as Record<string,string>)[actionType] ?? actionType}
+                              </p>
+                              <p className="text-xs" style={{ color: 'var(--muted2)' }}>
+                                {fmt(actionDate)}
+                                {actionDate && (() => {
+                                  const d = new Date(actionDate)
+                                  const t = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
+                                  return t !== '00:00' ? <span className="ml-1" style={{ color: 'var(--muted)' }}>à {t}</span> : null
+                                })()}
+                              </p>
+                            </>
+                          ) : (
+                            <span className="text-xs" style={{ color: 'var(--muted)' }}>—</span>
+                          )
+                        })()}
+                      </td>
+                    </tr>
+                  ))
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile: Cartes */}
+            <div className="md:hidden space-y-2">
+              {(() => {
+                const filtered = leads.filter(l => !filterAujourdhui || l.prochaine_action_date?.slice(0, 10) === today)
+                filtered.sort((a, b) => {
+                  const da = a.prochaine_action_date ?? (a.statut === 'reserve' ? a.cours_essai_date : null)
+                  const db = b.prochaine_action_date ?? (b.statut === 'reserve' ? b.cours_essai_date : null)
+                  if (!da && !db) return 0
+                  if (!da) return -1
+                  if (!db) return 1
+                  return sortDir === 'asc' ? da.localeCompare(db) : db.localeCompare(da)
+                })
+                return filtered
+              })().map((lead) => {
+                const actionType = lead.prochaine_action_type
+                  ?? (lead.statut === 'reserve' && lead.cours_essai_date ? 'cours_essai' : null)
+                const actionDate = lead.prochaine_action_date
+                  ?? (lead.statut === 'reserve' ? lead.cours_essai_date : null)
+                return (
+                  <div
                     key={lead.id}
                     onClick={() => setSelectedLead(lead)}
-                    className="cursor-pointer transition-colors"
+                    className="p-3 rounded-xl cursor-pointer transition-all"
                     style={{
-                      borderTop: i > 0 ? '1px solid var(--border2)' : undefined,
-                      background: selectedLead?.id === lead.id ? 'var(--accent-soft)' : undefined,
-                    }}
-                    onMouseEnter={e => {
-                      if (selectedLead?.id !== lead.id)
-                        (e.currentTarget as HTMLTableRowElement).style.background = 'var(--bg)'
-                    }}
-                    onMouseLeave={e => {
-                      if (selectedLead?.id !== lead.id)
-                        (e.currentTarget as HTMLTableRowElement).style.background = ''
+                      background: selectedLead?.id === lead.id ? 'var(--accent-soft)' : 'var(--card)',
+                      border: `1px solid ${selectedLead?.id === lead.id ? 'var(--accent)' : 'var(--border)'}`,
                     }}
                   >
-                    <td className="px-4 py-3">
-                      <p className="font-semibold" style={{ color: 'var(--dark)' }}>{lead.nom}</p>
-                      <p className="text-xs" style={{ color: 'var(--muted2)' }}>{lead.email}</p>
-                    </td>
-                    <td className="px-4 py-3">
+                    {/* Nom + Email */}
+                    <p className="font-semibold text-sm" style={{ color: 'var(--dark)' }}>{lead.nom}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--muted2)' }}>{lead.email}</p>
+
+                    {/* Badge statut + source */}
+                    <div className="flex items-center gap-2 mt-2">
                       <StatusBadge statut={lead.raison_archivage === 'non_qualifie' ? 'non_qualifie' : lead.statut} />
-                      {lead.raison_archivage && lead.raison_archivage !== 'non_qualifie' && (
-                        <p className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>
-                          {lead.raison_archivage.replace(/_/g, ' ')}
+                      <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg)', color: 'var(--muted2)' }}>
+                        {lead.source === 'pub_meta' ? 'Meta Ads' : 'Organique'}
+                      </span>
+                    </div>
+
+                    {/* Prochaine action */}
+                    {actionType ? (
+                      <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+                        <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
+                          {({'appel': 'Appel', 'sms': 'SMS', 'whatsapp': 'WhatsApp', 'mail': 'Mail', 'cours_essai': "Cours d'essai", 'cours_offert': 'Cours offert', 'temoignage': 'Témoignage'} as Record<string,string>)[actionType] ?? actionType}
                         </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
-                      {lead.source === 'pub_meta' ? 'Meta Ads' : 'Organique'}
-                    </td>
-                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
-                      {fmt(lead.created_at)}
-                    </td>
-                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--muted2)' }}>
-                      {timeAgo(lead.dernier_contact_date)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {(() => {
-                        const actionType = lead.prochaine_action_type
-                          ?? (lead.statut === 'reserve' && lead.cours_essai_date ? 'cours_essai' : null)
-                        const actionDate = lead.prochaine_action_date
-                          ?? (lead.statut === 'reserve' ? lead.cours_essai_date : null)
-                        return actionType ? (
-                          <>
-                            <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
-                              {({'appel': 'Appel', 'sms': 'SMS', 'whatsapp': 'WhatsApp', 'mail': 'Mail', 'cours_essai': "Cours d'essai", 'cours_offert': 'Cours offert', 'temoignage': 'Témoignage'} as Record<string,string>)[actionType] ?? actionType}
-                            </p>
-                            <p className="text-xs" style={{ color: 'var(--muted2)' }}>
-                              {fmt(actionDate)}
-                              {actionDate && (() => {
-                                const d = new Date(actionDate)
-                                const t = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
-                                return t !== '00:00' ? <span className="ml-1" style={{ color: 'var(--muted)' }}>à {t}</span> : null
-                              })()}
-                            </p>
-                          </>
-                        ) : (
-                          <span className="text-xs" style={{ color: 'var(--muted)' }}>—</span>
-                        )
-                      })()}
-                    </td>
-                  </tr>
-                ))
-              )
-              }
-            </tbody>
-          </table>
-        </div>
+                        <p className="text-xs" style={{ color: 'var(--muted2)' }}>
+                          {fmt(actionDate)}
+                          {actionDate && (() => {
+                            const d = new Date(actionDate)
+                            const t = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
+                            return t !== '00:00' ? <span className="ml-1" style={{ color: 'var(--muted)' }}>à {t}</span> : null
+                          })()}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+                        <p className="text-xs" style={{ color: 'var(--muted)' }}>Aucune action planifiée</p>
+                      </div>
+                    )}
+
+                    {/* Dernier contact */}
+                    <p className="text-xs mt-2" style={{ color: 'var(--muted)' }}>Dernier contact : {timeAgo(lead.dernier_contact_date)}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Detail panel */}
