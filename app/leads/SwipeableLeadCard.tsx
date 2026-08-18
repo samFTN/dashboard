@@ -311,73 +311,79 @@ export default function SwipeableLeadCard({
         {error && <p className="text-xs mt-2 text-red-600">{error}</p>}
       </div>
 
-      {/* Boutons d'action pointer-events (superposés sur le fond) */}
-      {isOpen && Math.abs(swipeX) > 60 && (
+      {/* Boutons d'action pointer-events (superposés sur le fond) - seulement quand bien décalé */}
+      {swipeX < -80 && (
         <>
-          {swipeX < -60 && (
-            <>
-              <button
-                onClick={handleQuickCall}
-                disabled={loading}
-                className="absolute left-0 top-0 h-full flex items-center justify-center text-white font-semibold"
-                style={{
-                  width: '150px',
-                  background: '#3b82f6',
-                  zIndex: 20,
-                  opacity: loading ? 0.7 : 1,
-                  pointerEvents: 'auto',
-                }}
-              >
-                📞
-              </button>
-              <button
-                onClick={handleNextStatut}
-                disabled={loading}
-                className="absolute left-[150px] top-0 h-full flex items-center justify-center text-white font-semibold"
-                style={{
-                  width: '150px',
-                  background: '#10b981',
-                  zIndex: 20,
-                  opacity: loading ? 0.7 : 1,
-                  pointerEvents: 'auto',
-                }}
-              >
-                →
-              </button>
-            </>
-          )}
-          {swipeX > 60 && (
+          <button
+            onClick={handleQuickCall}
+            disabled={loading}
+            className="absolute left-0 top-0 h-full flex items-center justify-center text-white font-bold flex-col"
+            style={{
+              width: '150px',
+              background: '#3b82f6',
+              zIndex: 20,
+              opacity: loading ? 0.6 : 1,
+              pointerEvents: 'auto',
+            }}
+          >
+            <span className="text-2xl">📞</span>
+            <span className="text-[10px] mt-0.5">Appel</span>
+          </button>
+          <button
+            onClick={handleNextStatut}
+            disabled={loading}
+            className="absolute left-[150px] top-0 h-full flex items-center justify-center text-white font-bold flex-col"
+            style={{
+              width: '150px',
+              background: '#10b981',
+              zIndex: 20,
+              opacity: loading ? 0.6 : 1,
+              pointerEvents: 'auto',
+            }}
+          >
+            <span className="text-2xl">→</span>
+            <span className="text-[10px] mt-0.5">Suivant</span>
+          </button>
+        </>
+      )}
+      {swipeX > 80 && (
+        <>
+          {!showArchiveReasons ? (
             <button
               onClick={() => setShowArchiveReasons(true)}
               disabled={loading}
-              className="absolute right-0 top-0 h-full w-[150px] flex items-center justify-center text-white font-semibold"
+              className="absolute right-0 top-0 h-full w-[150px] flex items-center justify-center text-white font-bold flex-col"
               style={{
                 background: '#ef4444',
                 zIndex: 20,
-                opacity: loading ? 0.7 : 1,
+                opacity: loading ? 0.6 : 1,
                 pointerEvents: 'auto',
               }}
             >
-              🗄️
+              <span className="text-2xl">🗄️</span>
+              <span className="text-[10px] mt-0.5">Archiver</span>
             </button>
-          )}
-          {showArchiveReasons && swipeX > 60 && (
+          ) : (
             <select
               onChange={e => handleArchiveWithReason(e.target.value)}
               disabled={loading}
-              className="absolute right-0 top-0 h-full w-[150px]"
+              className="absolute right-0 top-0 h-full w-[150px] text-center"
               style={{
                 background: '#ef4444',
                 border: 'none',
                 color: 'white',
                 zIndex: 21,
                 pointerEvents: 'auto',
+                fontSize: '12px',
+                fontWeight: 'bold',
               }}
               autoFocus
             >
-              <option value="">Raison...</option>
+              <option value="" style={{ color: 'black' }}>
+                Raison...
+              </option>
               {ARCHIVE_REASONS.map(r => (
-                <option key={r.value} value={r.value}>
+                <option key={r.value} value={r.value} style={{ color: 'black' }}>
                   {r.label}
                 </option>
               ))}
