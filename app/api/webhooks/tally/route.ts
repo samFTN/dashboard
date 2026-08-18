@@ -207,6 +207,7 @@ interface DayStats {
   leads: number
   formulaires: number
   qualifies: number
+  reservations: number
 }
 
 /** Compte les stats du jour depuis la base du dashboard. */
@@ -215,12 +216,13 @@ async function getDayStats(): Promise<DayStats> {
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
   const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
 
-  const { rows } = await pool.query<{ leads: string; formulaires: string; qualifies: string }>(
+  const { rows } = await pool.query<{ leads: string; formulaires: string; qualifies: string; reservations: string }>(
     `SELECT
        (SELECT COUNT(*) FROM leads WHERE created_at >= $1 AND created_at < $2)::text AS leads,
        (SELECT COUNT(*) FROM leads WHERE created_at >= $1 AND created_at < $2)::text AS formulaires,
        (SELECT COUNT(*) FROM leads WHERE created_at >= $1 AND created_at < $2
-        AND raison_archivage IS DISTINCT FROM 'non_qualifie')::text AS qualifies`,
+        AND raison_archivage IS DISTINCT FROM 'non_qualifie')::text AS qualifies,
+       (SELECT COUNT(*) FROM calendly_bookings WHERE DATE(start_time) = CURRENT_DATE AND status = 'active')::text AS reservations`,
     [startOfDay, endOfDay],
   )
 
@@ -228,6 +230,7 @@ async function getDayStats(): Promise<DayStats> {
     leads: Number(rows[0]?.leads ?? 0),
     formulaires: Number(rows[0]?.formulaires ?? 0),
     qualifies: Number(rows[0]?.qualifies ?? 0),
+    reservations: Number(rows[0]?.reservations ?? 0),
   }
 }
 
@@ -240,7 +243,7 @@ async function notifyLeadQualifie(): Promise<void> {
     const stats = await getDayStats()
     const lignes = [
       `Aujourd'hui : ${stats.leads} leads, ${stats.formulaires} formulaires ` +
-        `(${stats.qualifies} qualifiés).`,
+        `(${stats.qualifies} qualifiés), ${stats.reservations} appels réservés.`,
     ]
 
     await pushover(lignes.join('\n'), { title: 'Nouveau formulaire' }).catch(e =>
@@ -316,8 +319,7 @@ export async function POST(req: NextRequest) {
     delai_demarrage: extractByLabelContains(fields, 'quel délai') ?? undefined,
   } as Record<string, string | undefined>
 
-  // Surveillance des questions suivies : instantané + alerte si ça a changé,
-  // puis résolution des ids actifs pour la décision de qualification.
+  // Résolution des ids actifs pour la décision de qualification.
   const fieldsByKey: Record<string, OptSnap[]> = {}
   const selectedIdsByKey: Record<string, string[]> = {}
   for (const [key, fragment] of Object.entries(FIELD_FRAGMENTS)) {
@@ -325,8 +327,6 @@ export async function POST(req: NextRequest) {
     const options = normalizeOptions(field?.options)
     fieldsByKey[key] = options
     selectedIdsByKey[key] = selectedIds(field)
-    const rule = DISQUALIFIERS.find(r => r.key === key)
-    await checkFieldDrift(key, rule?.label ?? key, options)
   }
 
   const activeIdBySlug = await resolveActiveDisqualifierIds(fieldsByKey)
