@@ -311,69 +311,51 @@ export default function SwipeableLeadCard({
         {error && <p className="text-xs mt-2 text-red-600">{error}</p>}
       </div>
 
-      {/* Boutons d'action pointer-events (superposés sur le fond) - seulement quand bien décalé */}
-      {swipeX < -80 && (
-        <>
+      {/* Overlay clickable pour les actions (uniquement au swipe max) */}
+      {swipeX < -140 && (
+        <div className="absolute inset-0 flex" style={{ zIndex: 30, pointerEvents: 'none' }}>
           <button
             onClick={handleQuickCall}
             disabled={loading}
-            className="absolute left-0 top-0 h-full flex items-center justify-center text-white font-bold flex-col"
+            className="flex-1 flex items-center justify-center"
             style={{
-              width: '150px',
-              background: '#3b82f6',
-              zIndex: 20,
-              opacity: loading ? 0.6 : 1,
               pointerEvents: 'auto',
             }}
-          >
-            <span className="text-2xl">📞</span>
-            <span className="text-[10px] mt-0.5">Appel</span>
-          </button>
+          />
           <button
             onClick={handleNextStatut}
             disabled={loading}
-            className="absolute left-[150px] top-0 h-full flex items-center justify-center text-white font-bold flex-col"
+            className="flex-1 flex items-center justify-center"
             style={{
-              width: '150px',
-              background: '#10b981',
-              zIndex: 20,
-              opacity: loading ? 0.6 : 1,
               pointerEvents: 'auto',
             }}
-          >
-            <span className="text-2xl">→</span>
-            <span className="text-[10px] mt-0.5">Suivant</span>
-          </button>
-        </>
+          />
+        </div>
       )}
-      {swipeX > 80 && (
-        <>
+      {swipeX > 140 && (
+        <div
+          className="absolute right-0 top-0 h-full flex items-center justify-center"
+          style={{
+            width: '150px',
+            zIndex: 30,
+            pointerEvents: 'auto',
+          }}
+        >
           {!showArchiveReasons ? (
             <button
               onClick={() => setShowArchiveReasons(true)}
               disabled={loading}
-              className="absolute right-0 top-0 h-full w-[150px] flex items-center justify-center text-white font-bold flex-col"
-              style={{
-                background: '#ef4444',
-                zIndex: 20,
-                opacity: loading ? 0.6 : 1,
-                pointerEvents: 'auto',
-              }}
-            >
-              <span className="text-2xl">🗄️</span>
-              <span className="text-[10px] mt-0.5">Archiver</span>
-            </button>
+              className="w-full h-full flex items-center justify-center"
+            />
           ) : (
             <select
               onChange={e => handleArchiveWithReason(e.target.value)}
               disabled={loading}
-              className="absolute right-0 top-0 h-full w-[150px] text-center"
+              className="w-full h-full text-center"
               style={{
-                background: '#ef4444',
+                background: 'transparent',
                 border: 'none',
                 color: 'white',
-                zIndex: 21,
-                pointerEvents: 'auto',
                 fontSize: '12px',
                 fontWeight: 'bold',
               }}
@@ -389,7 +371,7 @@ export default function SwipeableLeadCard({
               ))}
             </select>
           )}
-        </>
+        </div>
       )}
     </div>
   )
