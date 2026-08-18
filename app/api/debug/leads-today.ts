@@ -1,7 +1,15 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
 
-export async function GET() {
+// Route publique pour debug (pas d'auth)
+export const dynamic = 'force-dynamic'
+
+export async function GET(req: Request) {
+  const secret = req.headers.get('x-debug-secret')
+  if (secret !== '12345') {
+    return NextResponse.json({ error: 'Secret requis' }, { status: 401 })
+  }
+
   try {
     const { rows } = await pool.query(
       `SELECT id, nom, email, statut, raison_archivage, archive, created_at
@@ -25,7 +33,7 @@ export async function GET() {
     })
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Erreur' },
+      { error: err instanceof Error ? err.message : 'Erreur DB' },
       { status: 500 }
     )
   }
