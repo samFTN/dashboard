@@ -4,7 +4,8 @@ import pool from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  const secret = req.headers.get('x-secret')
+  const url = new URL(req.url)
+  const secret = url.searchParams.get('secret') || req.headers.get('x-secret')
   if (secret !== process.env.DASHBOARD_PASSWORD) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
