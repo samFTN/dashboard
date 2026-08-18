@@ -216,21 +216,40 @@ async function getDayStats(): Promise<DayStats> {
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
   const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
 
-  const { rows } = await pool.query<{ leads: string; formulaires: string; qualifies: string; reservations: string }>(
+  // Stats depuis le dashboard
+  const { rows } = await pool.query<{ leads: string; formulaires: string; qualifies: string }>(
     `SELECT
        (SELECT COUNT(*) FROM leads WHERE created_at >= $1 AND created_at < $2)::text AS leads,
        (SELECT COUNT(*) FROM leads WHERE created_at >= $1 AND created_at < $2)::text AS formulaires,
        (SELECT COUNT(*) FROM leads WHERE created_at >= $1 AND created_at < $2
-        AND raison_archivage IS DISTINCT FROM 'non_qualifie')::text AS qualifies,
-       (SELECT COUNT(*) FROM calendly_bookings WHERE DATE(start_time) = CURRENT_DATE AND status = 'active')::text AS reservations`,
+        AND raison_archivage IS DISTINCT FROM 'non_qualifie')::text AS qualifies`,
     [startOfDay, endOfDay],
   )
+
+  // Réservations depuis le KPI (source de vérité pour Calendly)
+  let reservations = 0
+  try {
+    const kpiUrl = process.env.KPI_API_URL
+    const kpiSecret = process.env.KPI_API_SECRET
+    if (kpiUrl && kpiSecret) {
+      const res = await fetch(`${kpiUrl}/api/summary`, {
+        headers: { 'x-api-secret': kpiSecret },
+        cache: 'no-store',
+      })
+      if (res.ok) {
+        const data = (await res.json()) as { reservations?: number }
+        reservations = data.reservations ?? 0
+      }
+    }
+  } catch (e) {
+    console.error('[webhooks/tally] Erreur récupération réservations KPI :', e)
+  }
 
   return {
     leads: Number(rows[0]?.leads ?? 0),
     formulaires: Number(rows[0]?.formulaires ?? 0),
     qualifies: Number(rows[0]?.qualifies ?? 0),
-    reservations: Number(rows[0]?.reservations ?? 0),
+    reservations,
   }
 }
 
