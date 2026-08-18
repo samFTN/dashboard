@@ -553,7 +553,11 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
                 </thead>
                 <tbody>
                   {(() => {
-                    const filtered = leads.filter(l => !filterAujourdhui || l.prochaine_action_date?.slice(0, 10) === today)
+                    const filtered = leads.filter(l => {
+                      if (!showArchived && (l.statut === 'eleve' || l.statut === 'ancien_eleve')) return false
+                      if (!filterAujourdhui) return true
+                      return l.prochaine_action_date?.slice(0, 10) === today
+                    })
                     filtered.sort((a, b) => {
                       const da = a.prochaine_action_date ?? (a.statut === 'reserve' ? a.cours_essai_date : null)
                       const db = b.prochaine_action_date ?? (b.statut === 'reserve' ? b.cours_essai_date : null)
@@ -637,7 +641,11 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
             {/* Mobile: Cartes */}
             <div className="md:hidden space-y-2">
               {(() => {
-                const filtered = leads.filter(l => !filterAujourdhui || l.prochaine_action_date?.slice(0, 10) === today)
+                const filtered = leads.filter(l => {
+                  if (!showArchived && (l.statut === 'eleve' || l.statut === 'ancien_eleve')) return false
+                  if (!filterAujourdhui) return true
+                  return l.prochaine_action_date?.slice(0, 10) === today
+                })
                 filtered.sort((a, b) => {
                   const da = a.prochaine_action_date ?? (a.statut === 'reserve' ? a.cours_essai_date : null)
                   const db = b.prochaine_action_date ?? (b.statut === 'reserve' ? b.cours_essai_date : null)
