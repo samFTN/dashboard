@@ -413,7 +413,7 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
             </h1>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-sm" style={{ color: 'var(--muted2)' }}>
-                {`${leads.length} lead${leads.length > 1 ? 's' : ''} ${showArchived ? 'archivé' : 'actif'}${leads.length > 1 ? 's' : ''}`}
+                {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
               <span
                 className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
