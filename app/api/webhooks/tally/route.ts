@@ -202,51 +202,56 @@ function detectDisqualification(
   return reasons.length > 0 ? reasons.join(' | ') : null
 }
 
-interface KpiSummary {
-  depense: number
+
+interface DayStats {
   leads: number
   formulaires: number
   qualifies: number
-  reservations: number
-  ventes: number
 }
 
-/** Chiffres du jour depuis le KPI — best-effort, jamais bloquant. */
-async function fetchKpiSummary(): Promise<KpiSummary | null> {
-  const url = process.env.KPI_API_URL
-  const secret = process.env.KPI_API_SECRET
-  if (!url || !secret) return null
-  try {
-    const res = await fetch(`${url}/api/summary`, {
-      headers: { 'x-api-secret': secret },
-      cache: 'no-store',
-    })
-    if (!res.ok) return null
-    return (await res.json()) as KpiSummary
-  } catch (e) {
-    console.error('[webhooks/tally] Échec récupération résumé KPI :', e)
-    return null
+/** Compte les stats du jour depuis la base du dashboard. */
+async function getDayStats(): Promise<DayStats> {
+  const now = new Date()
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+
+  const { rows } = await pool.query<{ leads: string; formulaires: string; qualifies: string }>(
+    `SELECT
+       (SELECT COUNT(*) FROM leads WHERE created_at >= $1 AND created_at < $2)::text AS leads,
+       (SELECT COUNT(*) FROM leads WHERE created_at >= $1 AND created_at < $2)::text AS formulaires,
+       (SELECT COUNT(*) FROM leads WHERE created_at >= $1 AND created_at < $2
+        AND raison_archivage IS DISTINCT FROM 'non_qualifie')::text AS qualifies`,
+    [startOfDay, endOfDay],
+  )
+
+  return {
+    leads: Number(rows[0]?.leads ?? 0),
+    formulaires: Number(rows[0]?.formulaires ?? 0),
+    qualifies: Number(rows[0]?.qualifies ?? 0),
   }
 }
 
 /**
- * Notifie Samuel en temps réel dès qu'un lead devient qualifié, avec le
- * résumé des KPI du jour — pas juste l'alerte brute. Si le KPI est
- * injoignable, la notification part quand même, sans le résumé.
+ * Notifie Samuel en temps réel dès qu'un lead devient qualifié, avec les stats
+ * du jour comptées directement depuis la base du dashboard (source de vérité).
  */
 async function notifyLeadQualifie(): Promise<void> {
-  const summary = await fetchKpiSummary()
+  try {
+    const stats = await getDayStats()
+    const lignes = [
+      `Aujourd'hui : ${stats.leads} leads, ${stats.formulaires} formulaires ` +
+        `(${stats.qualifies} qualifiés).`,
+    ]
 
-  const lignes = summary
-    ? [
-        `Aujourd'hui : ${summary.leads} leads, ${summary.formulaires} formulaires ` +
-          `(${summary.qualifies} qualifiés), ${summary.reservations} appels réservés.`,
-      ]
-    : ['Résumé indisponible (KPI injoignable).']
-
-  await pushover(lignes.join('\n'), { title: 'Nouveau formulaire' }).catch(e =>
-    console.error('[webhooks/tally] Échec alerte lead qualifié :', e),
-  )
+    await pushover(lignes.join('\n'), { title: 'Nouveau formulaire' }).catch(e =>
+      console.error('[webhooks/tally] Échec alerte lead qualifié :', e),
+    )
+  } catch (e) {
+    console.error('[webhooks/tally] Erreur calcul stats du jour :', e)
+    await pushover('Nouveau formulaire qualifié (stats indisponibles).', {
+      title: 'Nouveau formulaire',
+    }).catch(() => {})
+  }
 }
 
 function validateSignature(rawBody: string, received: string, secret: string): boolean {
