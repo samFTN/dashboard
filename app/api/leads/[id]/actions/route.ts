@@ -34,23 +34,31 @@ export async function POST(
       [id, type, date, note?.trim() || null]
     )
 
-    let prochaine: { prochaine_action_type: string; prochaine_action_date: string; prochaine_action_note: null } | null = null
+    let prochaine: { prochaine_action_type: string | null; prochaine_action_date: string | null; prochaine_action_note: string | null } | null = null
     if (type === 'appel') {
       const nextDate = nextCallDate(date)
-      prochaine = {
-        prochaine_action_type: 'appel',
-        prochaine_action_date: new Date(`${nextDate}T00:00:00`).toISOString(),
-        prochaine_action_note: null,
-      }
-      await pool.query(
+      // Ne programme le prochain appel que s'il n'y a pas déjà une prochaine action future en place
+      const { rows: updated } = await pool.query(
         `UPDATE leads
          SET updated_at = NOW(),
-             prochaine_action_type = $2,
-             prochaine_action_date = $3,
-             prochaine_action_note = $4
-         WHERE id = $1`,
-        [id, prochaine.prochaine_action_type, prochaine.prochaine_action_date, prochaine.prochaine_action_note]
+             prochaine_action_type = 'appel',
+             prochaine_action_date = $2,
+             prochaine_action_note = NULL
+         WHERE id = $1
+           AND (prochaine_action_date IS NULL OR prochaine_action_date < NOW())
+         RETURNING prochaine_action_type, prochaine_action_date, prochaine_action_note`,
+        [id, new Date(`${nextDate}T00:00:00`).toISOString()]
       )
+      if (updated.length > 0) {
+        prochaine = updated[0]
+      } else {
+        const { rows: current } = await pool.query(
+          `UPDATE leads SET updated_at = NOW() WHERE id = $1
+           RETURNING prochaine_action_type, prochaine_action_date, prochaine_action_note`,
+          [id]
+        )
+        prochaine = current[0]
+      }
     } else {
       await pool.query(
         `UPDATE leads SET updated_at = NOW() WHERE id = $1`,
