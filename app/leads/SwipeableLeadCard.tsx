@@ -8,6 +8,9 @@ type Action = {
   type: string
   date: string
   note: string | null
+  prochaine_action_type?: string
+  prochaine_action_date?: string
+  prochaine_action_note?: string | null
 }
 
 const STATUT_LABELS: Record<string, string> = {

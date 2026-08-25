@@ -51,7 +51,15 @@ function parisTimeStr(iso: string): string {
   return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso))
 }
 
-type Action = { id: string; type: string; date: string; note: string | null }
+type Action = {
+  id: string
+  type: string
+  date: string
+  note: string | null
+  prochaine_action_type?: string
+  prochaine_action_date?: string
+  prochaine_action_note?: string | null
+}
 
 function DeleteButton({ leadId, onDeleted }: { leadId: string; onDeleted: () => void }) {
   const [confirm, setConfirm] = useState(false)
@@ -277,13 +285,26 @@ export default function LeadPanel({ lead, onClose, onLeadChanged, onArchived, on
       })
       if (!res.ok) throw new Error()
       const action: Action = await res.json()
+      const { prochaine_action_type, prochaine_action_date, prochaine_action_note, ...journalAction } = action
 
-      const updatedJournal = [action, ...currentLead.journal]
+      const updatedJournal = [journalAction, ...currentLead.journal]
       setCurrentLead(prev => ({
         ...prev,
         journal: updatedJournal,
         dernier_contact_date: action.date,
+        ...(prochaine_action_type !== undefined
+          ? { prochaine_action_type, prochaine_action_date, prochaine_action_note: prochaine_action_note ?? null }
+          : {}),
       }))
+      if (prochaine_action_type !== undefined && prochaine_action_date !== undefined) {
+        setProchaineForm({
+          type: prochaine_action_type,
+          date: parisDateStr(prochaine_action_date),
+          heure: '',
+          note: prochaine_action_note ?? '',
+        })
+        setShowHeure(false)
+      }
       onActionAdded(action)
       setActionForm({ type: 'appel', date: todayIso(), note: '' })
       setShowActionForm(false)

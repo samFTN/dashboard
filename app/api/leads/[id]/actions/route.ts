@@ -3,6 +3,19 @@ import pool from '@/lib/db'
 
 const TYPES = ['appel', 'sms', 'whatsapp', 'mail', 'cours_essai']
 
+// Ajoute 2 jours calendaires à la date d'appel, puis repousse au lundi si le résultat tombe un week-end
+function nextCallDate(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`)
+  d.setDate(d.getDate() + 2)
+  const day = d.getDay() // 0 = dimanche, 6 = samedi
+  if (day === 6) d.setDate(d.getDate() + 2)
+  else if (day === 0) d.setDate(d.getDate() + 1)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -21,12 +34,31 @@ export async function POST(
       [id, type, date, note?.trim() || null]
     )
 
-    await pool.query(
-      `UPDATE leads SET updated_at = NOW() WHERE id = $1`,
-      [id]
-    )
+    let prochaine: { prochaine_action_type: string; prochaine_action_date: string; prochaine_action_note: null } | null = null
+    if (type === 'appel') {
+      const nextDate = nextCallDate(date)
+      prochaine = {
+        prochaine_action_type: 'appel',
+        prochaine_action_date: new Date(`${nextDate}T00:00:00`).toISOString(),
+        prochaine_action_note: null,
+      }
+      await pool.query(
+        `UPDATE leads
+         SET updated_at = NOW(),
+             prochaine_action_type = $2,
+             prochaine_action_date = $3,
+             prochaine_action_note = $4
+         WHERE id = $1`,
+        [id, prochaine.prochaine_action_type, prochaine.prochaine_action_date, prochaine.prochaine_action_note]
+      )
+    } else {
+      await pool.query(
+        `UPDATE leads SET updated_at = NOW() WHERE id = $1`,
+        [id]
+      )
+    }
 
-    return NextResponse.json(rows[0], { status: 201 })
+    return NextResponse.json({ ...rows[0], ...prochaine }, { status: 201 })
   } catch (err) {
     console.error('[POST /api/leads/[id]/actions]', err)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

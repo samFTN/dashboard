@@ -348,17 +348,25 @@ export default function LeadsClient({ initialLeads, todayCount }: { initialLeads
     setSelectedLead(null)
   }
 
-  function handleActionAdded(action: LeadRow['journal'][0]) {
+  function handleActionAdded(action: LeadRow['journal'][0] & Partial<Pick<LeadRow, 'prochaine_action_type' | 'prochaine_action_date' | 'prochaine_action_note'>>) {
+    const { prochaine_action_type, prochaine_action_date, prochaine_action_note, ...journalAction } = action
     const changes: Partial<LeadRow> = {
-      journal: [action, ...(selectedLead?.journal ?? [])],
-      dernier_contact_date: action.date <= new Date().toISOString().slice(0, 10) ? action.date : selectedLead?.dernier_contact_date ?? null,
+      journal: [journalAction, ...(selectedLead?.journal ?? [])],
+      dernier_contact_date: journalAction.date <= new Date().toISOString().slice(0, 10) ? journalAction.date : selectedLead?.dernier_contact_date ?? null,
+      ...(prochaine_action_type !== undefined ? { prochaine_action_type, prochaine_action_date, prochaine_action_note } : {}),
     }
     handleLeadChanged(changes)
   }
 
-  function handleQuickActionAdded(leadId: string, action: LeadRow['journal'][0]) {
+  function handleQuickActionAdded(leadId: string, action: LeadRow['journal'][0] & Partial<Pick<LeadRow, 'prochaine_action_type' | 'prochaine_action_date' | 'prochaine_action_note'>>) {
+    const { prochaine_action_type, prochaine_action_date, prochaine_action_note, ...journalAction } = action
     setLeads(prev => prev.map(l => l.id === leadId
-      ? { ...l, journal: [action, ...l.journal], dernier_contact_date: action.date }
+      ? {
+          ...l,
+          journal: [journalAction, ...l.journal],
+          dernier_contact_date: journalAction.date,
+          ...(prochaine_action_type !== undefined ? { prochaine_action_type, prochaine_action_date, prochaine_action_note } : {}),
+        }
       : l))
   }
 
