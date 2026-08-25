@@ -42,8 +42,7 @@ export async function POST(
         `UPDATE leads
          SET updated_at = NOW(),
              prochaine_action_type = 'appel',
-             prochaine_action_date = $2,
-             prochaine_action_note = NULL
+             prochaine_action_date = $2
          WHERE id = $1
            AND (prochaine_action_date IS NULL OR prochaine_action_date < NOW())
          RETURNING prochaine_action_type, prochaine_action_date, prochaine_action_note`,
