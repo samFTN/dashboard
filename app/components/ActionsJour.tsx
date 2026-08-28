@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { formatPhone, phoneHref } from '@/lib/phone'
 
 type Action = {
   id: string
@@ -55,7 +56,7 @@ export default function ActionsJour({ actions }: { actions: Action[] }) {
                 {a.telephone && (
                   confirming === a.id ? (
                     <a
-                      href={`tel:${a.telephone.replace(/\s/g, '')}`}
+                      href={`tel:${phoneHref(a.telephone)}`}
                       className="text-xs font-bold px-2.5 py-1 rounded-lg"
                       style={{ background: '#d97706', color: 'white' }}
                       onClick={e => e.stopPropagation()}
@@ -68,7 +69,7 @@ export default function ActionsJour({ actions }: { actions: Action[] }) {
                       style={{ color: 'var(--dark)' }}
                       onClick={e => { e.preventDefault(); e.stopPropagation(); setConfirming(a.id) }}
                     >
-                      {a.telephone}
+                      {formatPhone(a.telephone)}
                     </button>
                   )
                 )}

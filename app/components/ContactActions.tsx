@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { formatPhone, phoneHref } from '@/lib/phone'
 
 interface ContactActionsProps {
   email?: string
@@ -97,18 +98,18 @@ export function ContactActions({ email, telephone, style, className }: ContactAc
             style={{ fontSize: 13, color: 'var(--muted2)', cursor: 'default', userSelect: 'text' }}
             onClick={() => setTapped(p => p === 'phone' ? null : 'phone')}
           >
-            {telephone}
+            {formatPhone(telephone)}
           </span>
           {showPhone && (
             <>
-              <a href={`tel:${telephone}`} style={btnStyle} onClick={e => e.stopPropagation()}>
+              <a href={`tel:${phoneHref(telephone)}`} style={btnStyle} onClick={e => e.stopPropagation()}>
                 Appeler
               </a>
-              <a href={`sms:${telephone}`} style={btnStyle} onClick={e => e.stopPropagation()}>
+              <a href={`sms:${phoneHref(telephone)}`} style={btnStyle} onClick={e => e.stopPropagation()}>
                 SMS
               </a>
               <a
-                href={`https://wa.me/${telephone.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '33')}`}
+                href={`https://wa.me/${phoneHref(telephone).replace('+', '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ ...btnStyle, color: '#25D366' }}
@@ -118,7 +119,7 @@ export function ContactActions({ email, telephone, style, className }: ContactAc
               </a>
               <button
                 style={{ ...btnStyle, color: copied === 'phone' ? '#15803d' : 'var(--muted2)' }}
-                onClick={e => { e.stopPropagation(); copy(telephone, 'phone') }}
+                onClick={e => { e.stopPropagation(); copy(formatPhone(telephone), 'phone') }}
               >
                 {copied === 'phone' ? '✓ Copié' : 'Copier'}
               </button>
